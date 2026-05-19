@@ -1,12 +1,14 @@
 import { D1Database } from '@cloudflare/workers-types';
-import type { User, IncenseLog } from './types';
+import type { User, IncenseLog, WoodFishLog } from './types';
 
 export async function initDB(db: D1Database): Promise<void> {
   const statements = [
     'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL);',
     'CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL);',
     'CREATE INDEX IF NOT EXISTS idx_incense_user_id ON incense_logs(user_id);',
-    'CREATE INDEX IF NOT EXISTS idx_incense_created_at ON incense_logs(created_at);'
+    'CREATE INDEX IF NOT EXISTS idx_incense_created_at ON incense_logs(created_at);',
+    'CREATE TABLE IF NOT EXISTS wood_fish_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), count INTEGER NOT NULL DEFAULT 1, merit INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);',
+    'CREATE INDEX IF NOT EXISTS idx_woodfish_user_id ON wood_fish_logs(user_id);'
   ];
   for (const stmt of statements) {
     await db.exec(stmt);
@@ -153,6 +155,85 @@ export async function getRecentIncenseLogs(
     )
     .bind(limit)
     .all<IncenseLog & { username: string }>();
+
+  return result.results;
+}
+
+// Wood Fish (敲木鱼) functions
+export async function createWoodFishLog(
+  db: D1Database,
+  id: string,
+  userId: string,
+  count: number,
+  merit: number
+): Promise<WoodFishLog | null> {
+  const createdAt = Date.now();
+  const result = await db
+    .prepare(
+      'INSERT INTO wood_fish_logs (id, user_id, count, merit, created_at) VALUES (?, ?, ?, ?, ?)'
+    )
+    .bind(id, userId, count, merit, createdAt)
+    .run();
+
+  if (result.success) {
+    return { id, user_id: userId, count, merit, created_at: createdAt };
+  }
+  return null;
+}
+
+export async function getUserWoodFishLogs(
+  db: D1Database,
+  userId: string,
+  limit = 50
+): Promise<WoodFishLog[]> {
+  const result = await db
+    .prepare(
+      'SELECT * FROM wood_fish_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
+    )
+    .bind(userId, limit)
+    .all<WoodFishLog>();
+
+  return result.results;
+}
+
+export async function getUserTotalWoodFish(
+  db: D1Database,
+  userId: string
+): Promise<{ count: number; merit: number }> {
+  const result = await db
+    .prepare('SELECT SUM(count) as total_count, SUM(merit) as total_merit FROM wood_fish_logs WHERE user_id = ?')
+    .bind(userId)
+    .first<{ total_count: number; total_merit: number }>();
+
+  return {
+    count: result?.total_count || 0,
+    merit: result?.total_merit || 0
+  };
+}
+
+export async function getWoodFishLeaderboard(
+  db: D1Database,
+  limit = 10
+): Promise<{ username: string; count: number; merit: number }[]> {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dayOfWeek);
+  weekStart.setHours(0, 0, 0, 0);
+  const weekStartTs = weekStart.getTime();
+
+  const result = await db
+    .prepare(
+      `SELECT u.username, SUM(w.count) as count, SUM(w.merit) as merit
+       FROM wood_fish_logs w
+       JOIN users u ON w.user_id = u.id
+       WHERE w.created_at >= ?
+       GROUP BY u.id, u.username
+       ORDER BY merit DESC
+       LIMIT ?`
+    )
+    .bind(weekStartTs, limit)
+    .all<{ username: string; count: number; merit: number }>();
 
   return result.results;
 }

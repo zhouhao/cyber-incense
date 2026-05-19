@@ -6,6 +6,7 @@ import manifest from '__STATIC_CONTENT_MANIFEST';
 import type { Env } from './types';
 import { register, login, getCurrentUser, getAuthToken } from './auth';
 import { burnIncense, getMyIncense, getLeaderboardData, getRecentData } from './incense';
+import { tapWoodFish, getMyWoodFish, getWoodFishLeaderboardData, getWoodFishStats } from './woodfish';
 import { initDB } from './db';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -33,6 +34,7 @@ async function ensureDBinitialized(env: Env) {
 // HTML pages
 app.get('/', serveStatic({ path: 'index.html', manifest }));
 app.get('/burn', serveStatic({ path: 'burn.html', manifest }));
+app.get('/woodfish', serveStatic({ path: 'woodfish.html', manifest }));
 app.get('/me', serveStatic({ path: 'me.html', manifest }));
 app.get('/auth', serveStatic({ path: 'auth.html', manifest }));
 
@@ -145,6 +147,52 @@ app.get('/api/incense/recent', async (c) => {
 
   const data = await getRecentData(c.env);
   return c.json({ recent: data });
+});
+
+// Wood Fish API Routes
+app.post('/api/woodfish', async (c) => {
+  await ensureDBinitialized(c.env);
+
+  const user = await getCurrentUser(c.req.raw, c.env);
+  if (!user) {
+    return c.json({ error: 'Please login first' }, 401);
+  }
+
+  const { count } = await c.req.json();
+
+  const result = await tapWoodFish(c.env, user.id, count || 1);
+
+  if (!result.success) {
+    return c.json({ error: result.error }, 400);
+  }
+
+  return c.json({ success: true, data: result.data });
+});
+
+app.get('/api/woodfish/my', async (c) => {
+  await ensureDBinitialized(c.env);
+
+  const user = await getCurrentUser(c.req.raw, c.env);
+  if (!user) {
+    return c.json({ error: 'Please login first' }, 401);
+  }
+
+  const data = await getMyWoodFish(c.env, user.id);
+  return c.json(data);
+});
+
+app.get('/api/woodfish/leaderboard', async (c) => {
+  await ensureDBinitialized(c.env);
+
+  const data = await getWoodFishLeaderboardData(c.env);
+  return c.json({ leaderboard: data });
+});
+
+app.get('/api/woodfish/stats', async (c) => {
+  await ensureDBinitialized(c.env);
+
+  const data = await getWoodFishStats(c.env);
+  return c.json(data);
 });
 
 export default app;

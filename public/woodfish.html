@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>赛博敲木鱼 - Cyber Woodfish</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Woodfish specific styles */
+    .woodfish-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 2rem auto;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .woodfish-body {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #2a1a0a, #1a0a00);
+      border-radius: 50% 50% 45% 45%;
+      border: 3px solid #8B4513;
+      box-shadow:
+        0 0 30px rgba(139, 69, 19, 0.5),
+        inset 0 0 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+      transition: transform 0.1s ease;
+    }
+
+    .woodfish-body.tapping {
+      transform: scale(0.95);
+      box-shadow:
+        0 0 50px rgba(255, 215, 0, 0.8),
+        inset 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Wood grain pattern */
+    .woodfish-body::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: repeating-linear-gradient(
+        85deg,
+        transparent,
+        transparent 8px,
+        rgba(139, 69, 19, 0.1) 8px,
+        rgba(139, 69, 19, 0.1) 10px
+      );
+      border-radius: 50% 50% 45% 45%;
+      pointer-events: none;
+    }
+
+    /* Golden text on woodfish */
+    .woodfish-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-heading);
+      font-size: 3rem;
+      color: #ffd700;
+      text-shadow:
+        0 0 10px #ffd700,
+        0 0 20px #ffd700,
+        2px 2px 4px rgba(0,0,0,0.8);
+      pointer-events: none;
+    }
+
+    /* Tap indicator ring */
+    .tap-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      border: 2px solid rgba(255, 215, 0, 0.3);
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .tap-ring.active {
+      animation: ripple 0.6s ease-out;
+    }
+
+    @keyframes ripple {
+      0% {
+        width: 150px;
+        height: 150px;
+        opacity: 0.8;
+      }
+      100% {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+      }
+    }
+
+    /* Stats display */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 4px;
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 2.5rem;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Tap count selector */
+    .tap-selector {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+
+    .tap-option {
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: var(--font-mono);
+    }
+
+    .tap-option:hover {
+      border-color: #ffd700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+
+    .tap-option.selected {
+      background: #ffd700;
+      color: var(--bg-primary);
+      border-color: #ffd700;
+    }
+
+    /* Combo display */
+    .combo-display {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-heading);
+      font-size: 4rem;
+      color: #ffd700;
+      text-shadow:
+        0 0 20px #ffd700,
+        0 0 40px #ffd700;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 100;
+    }
+
+    .combo-display.show {
+      animation: comboAnim 0.8s ease-out;
+    }
+
+    @keyframes comboAnim {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5) translateY(-50px);
+      }
+    }
+
+    /* Merit float animation */
+    .merit-float {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-100px);
+      }
+    }
+
+    /* Quick tap button */
+    .quick-tap-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #3a2a1a, #2a1a0a);
+      border: 3px solid #ffd700;
+      color: #ffd700;
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      transition: all 0.1s ease;
+      z-index: 50;
+    }
+
+    .quick-tap-btn:active {
+      transform: scale(0.9);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    }
+
+    /* Progress to 108 */
+    .progress-container {
+      width: 100%;
+      max-width: 400px;
+      margin: 1rem auto;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 215, 0, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff6600);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .progress-label {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+  <!-- Combo display -->
+  <div id="combo-display" class="combo-display"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="logo">
+      <span class="logo-icon">🔥</span>
+      <span class="logo-text glitch">赛博上香</span>
+    </a>
+    <div class="nav-links">
+      <a href="/burn" class="nav-link">上香</a>
+      <a href="/woodfish" class="nav-link" style="color: var(--color-gold);">敲木鱼</a>
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main style="padding-top: 80px; min-height: 100vh;">
+    <!-- Login Required -->
+    <div id="login-required" style="display: none; text-align: center; padding: 4rem 2rem;">
+      <h2 style="color: var(--color-gold); font-family: var(--font-heading); margin-bottom: 1rem;">请先登录</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">敲击木鱼需要你的灵魂在场</p>
+      <a href="/auth" class="btn btn-gold">登录 / 注册</a>
+    </div>
+
+    <!-- Woodfish Interface -->
+    <div id="woodfish-interface" style="display: none;">
+      <div class="container" style="max-width: 800px; text-align: center;">
+        <!-- Title -->
+        <h1 style="color: var(--color-gold); font-family: var(--font-heading); font-size: 2rem; margin-bottom: 0.5rem;">
+          赛博敲木鱼
+        </h1>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+          CYBER WOODFISH // 积德消业 // 赛博修行
+        </p>
+
+        <!-- Tap count selector -->
+        <div class="tap-selector">
+          <button class="tap-option selected" data-count="1">+1</button>
+          <button class="tap-option" data-count="10">+10</button>
+          <button class="tap-option" data-count="28">+28</button>
+          <button class="tap-option" data-count="49">+49</button>
+          <button class="tap-option" data-count="108">+108</button>
+        </div>
+
+        <!-- Progress to 108 -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+          </div>
+          <div class="progress-label">
+            本轮进度: <span id="current-progress">0</span> / 108
+          </div>
+        </div>
+
+        <!-- Woodfish -->
+        <div id="woodfish-container" class="woodfish-container">
+          <div class="tap-ring" id="tap-ring"></div>
+          <div class="woodfish-body" id="woodfish-body">
+            <div class="woodfish-text">魚</div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div id="total-count" class="stat-value">0</div>
+            <div class="stat-label">累计敲击</div>
+          </div>
+          <div class="stat-card">
+            <div id="total-merit" class="stat-value">0</div>
+            <div class="stat-label">累积功德</div>
+          </div>
+          <div class="stat-card">
+            <div id="session-taps" class="stat-value">0</div>
+            <div class="stat-label">本次敲击</div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card" style="margin-top: 2rem;">
+          <h3 style="color: var(--color-gold); font-family: var(--font-heading); margin-bottom: 1rem;">
+            功德榜 // MERIT RANK
+          </h3>
+          <div id="leaderboard-list">
+            <div style="text-align: center; color: var(--text-muted);">加载中...</div>
+          </div>
+        </div>
+
+        <!-- Achievements preview -->
+        <div class="card" style="margin-top: 2rem;">
+          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem;">
+            成就 // ACHIEVEMENTS
+          </h3>
+          <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+            <div class="achievement" data-id="first_tap" style="text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem;">🎯</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">首次敲击</div>
+            </div>
+            <div class="achievement" data-id="tap_108" style="text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem;">🔔</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">敲满108</div>
+            </div>
+            <div class="achievement" data-id="tap_1000" style="text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem;">⚡</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">敲击千次</div>
+            </div>
+            <div class="achievement" data-id="tap_10000" style="text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem;">🌟</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">功德圆满</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Quick tap button (floating) -->
+  <button id="quick-tap" class="quick-tap-btn" style="display: none;">敲</button>
+
+  <footer class="footer">
+    <p>赛博上香 // <span>CYBER.ALTAR</span> // 让功德运行在边缘节点</p>
+  </footer>
+
+  <script>
+    let selectedCount = 1;
+    let sessionTaps = 0;
+    let sessionMerit = 0;
+    let currentProgress = 0;
+
+    // Check auth
+    async function checkAuth() {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('nav-user').innerHTML = `
+          <a href="/me" class="nav-link"><span class="username">${escapeHtml(data.user.username)}</span></a>
+          <button class="btn" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">登出</button>
+        `;
+        document.getElementById('woodfish-interface').style.display = 'block';
+        document.getElementById('quick-tap').style.display = 'block';
+        loadMyData();
+        loadLeaderboard();
+      } else {
+        document.getElementById('login-required').style.display = 'block';
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    // Tap count selector
+    document.querySelectorAll('.tap-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tap-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedCount = parseInt(btn.dataset.count);
+      });
+    });
+
+    // Woodfish click handler
+    document.getElementById('woodfish-body').addEventListener('click', () => doTap());
+    document.getElementById('quick-tap').addEventListener('click', () => doTap());
+
+    async function doTap() {
+      const body = document.getElementById('woodfish-body');
+      const ring = document.getElementById('tap-ring');
+
+      // Visual feedback
+      body.classList.add('tapping');
+      ring.classList.remove('active');
+      void ring.offsetWidth; // Trigger reflow
+      ring.classList.add('active');
+
+      setTimeout(() => body.classList.remove('tapping'), 100);
+
+      try {
+        const res = await fetch('/api/woodfish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count: selectedCount })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Update stats
+          document.getElementById('total-count').textContent = data.data.total_count;
+          document.getElementById('total-merit').textContent = data.data.total_merit;
+          sessionTaps += selectedCount;
+          sessionMerit += data.data.merit;
+          document.getElementById('session-taps').textContent = sessionTaps;
+
+          // Update progress
+          currentProgress = data.data.total_count % 108;
+          document.getElementById('current-progress').textContent = currentProgress;
+          document.getElementById('progress-fill').style.width = (currentProgress / 108 * 100) + '%';
+
+          // Show combo for big taps
+          if (selectedCount >= 28) {
+            showCombo(selectedCount, data.data.merit);
+          }
+
+          // Show merit float
+          showMeritFloat(data.data.merit);
+
+          // Round complete celebration
+          if (data.data.round_complete > 0) {
+            setTimeout(() => {
+              showToast(`🎉 完成 ${data.data.round_complete} 轮! +${data.data.round_complete * 10} 功德加成`, 'success');
+            }, 500);
+          }
+
+          // Achievements
+          if (data.data.achievements && data.data.achievements.length > 0) {
+            const achievementNames = {
+              first_tap: '首次敲击',
+              tap_108: '敲满108',
+              tap_1000: '敲击千次',
+              tap_10000: '功德圆满'
+            };
+            setTimeout(() => {
+              const achieved = data.data.achievements.map(a => achievementNames[a]).join(', ');
+              showToast(`🏆 成就解锁: ${achieved}`, 'success');
+            }, 1000);
+          }
+        } else {
+          showToast(data.error || '敲击失败', 'error');
+        }
+      } catch (e) {
+        showToast('网络错误', 'error');
+      }
+    }
+
+    function showCombo(count, merit) {
+      const combo = document.getElementById('combo-display');
+      combo.textContent = `+${count}`;
+      combo.classList.remove('show');
+      void combo.offsetWidth;
+      combo.classList.add('show');
+    }
+
+    function showMeritFloat(merit) {
+      const container = document.getElementById('woodfish-container');
+      const float = document.createElement('div');
+      float.className = 'merit-float';
+      float.textContent = `+${merit}`;
+      float.style.left = (Math.random() * 100 + 50) + 'px';
+      float.style.top = '50%';
+      container.appendChild(float);
+      setTimeout(() => float.remove(), 1000);
+    }
+
+    async function loadMyData() {
+      try {
+        const res = await fetch('/api/woodfish/my');
+        const data = await res.json();
+
+        document.getElementById('total-count').textContent = data.total_count || 0;
+        document.getElementById('total-merit').textContent = data.total_merit || 0;
+
+        currentProgress = (data.total_count || 0) % 108;
+        document.getElementById('current-progress').textContent = currentProgress;
+        document.getElementById('progress-fill').style.width = (currentProgress / 108 * 100) + '%';
+
+        // Update achievements
+        const achievements = data.achievements || {};
+        Object.keys(achievements).forEach(key => {
+          if (achievements[key]) {
+            const el = document.querySelector(`.achievement[data-id="${key}"]`);
+            if (el) {
+              el.style.opacity = '1';
+              el.style.borderBottom = '2px solid var(--color-gold)';
+            }
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch('/api/woodfish/leaderboard');
+        const data = await res.json();
+
+        if (data.leaderboard && data.leaderboard.length > 0) {
+          const list = document.getElementById('leaderboard-list');
+          list.innerHTML = data.leaderboard.map((item, i) => `
+            <div style="display: flex; align-items: center; padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <span style="width: 30px; color: ${i < 3 ? 'var(--color-gold)' : 'var(--text-muted)'}; font-family: var(--font-mono);">#${i + 1}</span>
+              <span style="flex: 1; color: var(--text-primary);">${escapeHtml(item.username)}</span>
+              <span style="color: var(--color-gold); font-family: var(--font-mono);">${item.merit} 功德</span>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('leaderboard-list').innerHTML = '<div style="text-align: center; color: var(--text-muted);">暂无记录</div>';
+        }
+      } catch (e) {
+        document.getElementById('leaderboard-list').innerHTML = '<div style="text-align: center; color: var(--text-muted);">加载失败</div>';
+      }
+    }
+
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Keyboard shortcut: Space to tap
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && document.getElementById('woodfish-interface').style.display !== 'none') {
+        e.preventDefault();
+        doTap();
+      }
+    });
+
+    checkAuth();
+  </script>
+</body>
+</html>

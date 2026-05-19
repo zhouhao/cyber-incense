@@ -19,6 +19,14 @@ export interface IncenseLog {
   created_at: number;
 }
 
+export interface WoodFishLog {
+  id: string;
+  user_id: string;
+  count: number;
+  merit: number;
+  created_at: number;
+}
+
 export interface JwtPayload {
   [key: string]: any;
   sub: string;
