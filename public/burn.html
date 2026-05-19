@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>上香 - 赛博上香</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="logo">
+      <span class="logo-icon">🔥</span>
+      <span class="logo-text glitch">赛博上香</span>
+    </a>
+    <div class="nav-links">
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main style="padding-top: 80px; min-height: 100vh;">
+    <!-- Login Required Notice -->
+    <div id="login-required" style="display: none; text-align: center; padding: 4rem 2rem;">
+      <h2 style="color: var(--color-primary); font-family: var(--font-heading); margin-bottom: 1rem;">请先登录</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">点燃香火需要你的灵魂在场</p>
+      <a href="/auth" class="btn btn-gold">登录 / 注册</a>
+    </div>
+
+    <!-- Burn Interface -->
+    <div id="burn-interface" style="display: none;">
+      <div class="container" style="max-width: 800px;">
+        <!-- Incense Burner Animation -->
+        <div style="text-align: center; margin: 2rem 0;">
+          <div id="incense-burner" style="position: relative; display: inline-block;">
+            <canvas id="flame-canvas" width="200" height="250"></canvas>
+            <div id="smoke-container" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none;"></div>
+          </div>
+          <p id="burn-status" style="color: var(--text-muted); font-family: var(--font-mono); margin-top: 1rem;">选择香型，开始祈福</p>
+        </div>
+
+        <!-- Type Selection -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+          <button class="type-btn" data-type="career" style="background: var(--bg-secondary); border: 2px solid var(--color-primary); padding: 1rem; cursor: pointer; transition: all 0.3s;">
+            <div style="font-size: 2rem;">💼</div>
+            <div style="color: var(--color-primary); font-family: var(--font-heading); margin-top: 0.5rem;">事业香</div>
+          </button>
+          <button class="type-btn" data-type="love" style="background: var(--bg-secondary); border: 2px solid var(--color-secondary); padding: 1rem; cursor: pointer; transition: all 0.3s;">
+            <div style="font-size: 2rem;">💕</div>
+            <div style="color: var(--color-secondary); font-family: var(--font-heading); margin-top: 0.5rem;">爱情香</div>
+          </button>
+          <button class="type-btn" data-type="health" style="background: var(--bg-secondary); border: 2px solid var(--color-gold); padding: 1rem; cursor: pointer; transition: all 0.3s;">
+            <div style="font-size: 2rem;">💪</div>
+            <div style="color: var(--color-gold); font-family: var(--font-heading); margin-top: 0.5rem;">健康香</div>
+          </button>
+          <button class="type-btn" data-type="study" style="background: var(--bg-secondary); border: 2px solid #9b59b6; padding: 1rem; cursor: pointer; transition: all 0.3s;">
+            <div style="font-size: 2rem;">📚</div>
+            <div style="color: #9b59b6; font-family: var(--font-heading); margin-top: 0.5rem;">学业香</div>
+          </button>
+        </div>
+
+        <!-- Wish Form -->
+        <div class="card" style="max-width: 600px; margin: 0 auto 2rem;">
+          <form id="wish-form">
+            <div class="form-group">
+              <label class="form-label">祈愿文 // WISH</label>
+              <textarea id="wish-input" class="form-input" rows="3" maxlength="100" placeholder="在这里输入你的愿望...（最多100字）" required></textarea>
+              <div style="text-align: right; color: var(--text-muted); font-size: 0.8rem;">
+                <span id="char-count">0</span> / 100
+              </div>
+            </div>
+            <button type="submit" id="burn-btn" class="btn btn-gold" style="width: 100%;" disabled>
+              点燃香火
+            </button>
+          </form>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card" style="margin-top: 2rem;">
+          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem; text-align: center;">
+            本周香火榜 // TOP INCENSE
+          </h3>
+          <div id="leaderboard-list">
+            <div style="text-align: center; color: var(--text-muted);">加载中...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>赛博上香 // <span>CYBER.ALTAR</span> // 让信仰运行在边缘节点</p>
+  </footer>
+
+  <script>
+    let selectedType = null;
+    let isBurning = false;
+
+    // Check auth
+    async function checkAuth() {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('nav-user').innerHTML = `
+          <a href="/me" class="nav-link"><span class="username">${escapeHtml(data.user.username)}</span></a>
+          <button class="btn" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">登出</button>
+        `;
+        document.getElementById('burn-interface').style.display = 'block';
+        loadLeaderboard();
+      } else {
+        document.getElementById('login-required').style.display = 'block';
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    // Type selection
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.type-btn').forEach(b => {
+          b.style.transform = 'scale(1)';
+          b.style.boxShadow = 'none';
+        });
+        btn.style.transform = 'scale(1.05)';
+        btn.style.boxShadow = '0 0 20px currentColor';
+        selectedType = btn.dataset.type;
+        document.getElementById('burn-btn').disabled = false;
+        document.getElementById('burn-status').textContent = `已选择 ${getTypeName(selectedType)}，输入祈愿文后点燃`;
+      });
+    });
+
+    function getTypeName(type) {
+      const names = { career: '事业香', love: '爱情香', health: '健康香', study: '学业香' };
+      return names[type] || type;
+    }
+
+    // Character counter
+    document.getElementById('wish-input').addEventListener('input', (e) => {
+      document.getElementById('char-count').textContent = e.target.value.length;
+    });
+
+    // Burn incense
+    document.getElementById('wish-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedType || isBurning) return;
+
+      const wish = document.getElementById('wish-input').value.trim();
+      if (!wish) return;
+
+      isBurning = true;
+      const btn = document.getElementById('burn-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> 燃烧中...';
+
+      // Start flame animation
+      startFlameAnimation();
+      document.getElementById('burn-status').textContent = '香火燃烧中...';
+
+      try {
+        const res = await fetch('/api/incense', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: selectedType, wish })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          document.getElementById('burn-status').textContent = '祈愿已传达虚空 ✨';
+          document.getElementById('burn-status').style.color = 'var(--color-gold)';
+
+          // Show achievements
+          if (data.data.achievements && data.data.achievements.length > 0) {
+            const achievementNames = {
+              first_incense: '首次上香',
+              incense_10: '上香10次',
+              incense_50: '上香50次'
+            };
+            const achieved = data.data.achievements.map(a => achievementNames[a]).join(', ');
+            setTimeout(() => {
+              showToast(`🏆 成就解锁: ${achieved}`, 'success');
+            }, 1500);
+          }
+
+          // Reset form
+          setTimeout(() => {
+            selectedType = null;
+            document.querySelectorAll('.type-btn').forEach(b => {
+              b.style.transform = 'scale(1)';
+              b.style.boxShadow = 'none';
+            });
+            document.getElementById('wish-input').value = '';
+            document.getElementById('char-count').textContent = '0';
+            btn.disabled = true;
+            btn.textContent = '点燃香火';
+            document.getElementById('burn-status').textContent = '选择香型，开始祈福';
+            document.getElementById('burn-status').style.color = '';
+            stopFlameAnimation();
+            loadLeaderboard();
+          }, 2000);
+        } else {
+          showToast(data.error || '上香失败', 'error');
+          stopFlameAnimation();
+          btn.disabled = false;
+          btn.textContent = '点燃香火';
+        }
+      } catch (e) {
+        showToast('网络错误', 'error');
+        stopFlameAnimation();
+        btn.disabled = false;
+        btn.textContent = '点燃香火';
+      }
+
+      isBurning = false;
+    });
+
+    // Flame animation
+    let flameAnimationId = null;
+    function startFlameAnimation() {
+      const canvas = document.getElementById('flame-canvas');
+      const ctx = canvas.getContext('2d');
+      let phase = 0;
+
+      function drawFlame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw incense stick
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(98, 150, 4, 80);
+
+        // Draw flame
+        phase += 0.15;
+        const flicker = Math.sin(phase) * 5;
+        const flicker2 = Math.cos(phase * 0.7) * 3;
+
+        // Outer flame
+        ctx.beginPath();
+        ctx.moveTo(100, 150);
+        ctx.quadraticCurveTo(80 + flicker, 100, 100 + flicker2, 50);
+        ctx.quadraticCurveTo(120 + flicker, 100, 100, 150);
+        ctx.fillStyle = '#ffd700';
+        ctx.fill();
+
+        // Inner flame
+        ctx.beginPath();
+        ctx.moveTo(100, 150);
+        ctx.quadraticCurveTo(90 + flicker2, 120, 100 + flicker, 70);
+        ctx.quadraticCurveTo(110 + flicker2, 120, 100, 150);
+        ctx.fillStyle = '#ff6600';
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.moveTo(100, 150);
+        ctx.quadraticCurveTo(96, 130, 100 + flicker * 0.5, 90);
+        ctx.quadraticCurveTo(104 + flicker * 0.5, 130, 100, 150);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+
+        flameAnimationId = requestAnimationFrame(drawFlame);
+      }
+
+      drawFlame();
+    }
+
+    function stopFlameAnimation() {
+      if (flameAnimationId) {
+        cancelAnimationFrame(flameAnimationId);
+        flameAnimationId = null;
+      }
+    }
+
+    // Load leaderboard
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch('/api/incense/leaderboard');
+        const data = await res.json();
+
+        if (data.leaderboard && data.leaderboard.length > 0) {
+          const list = document.getElementById('leaderboard-list');
+          list.innerHTML = data.leaderboard.map((item, i) => `
+            <div style="display: flex; align-items: center; padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <span style="width: 30px; color: ${i < 3 ? 'var(--color-gold)' : 'var(--text-muted)'}; font-family: var(--font-mono);">#${i + 1}</span>
+              <span style="flex: 1; color: var(--text-primary);">${escapeHtml(item.username)}</span>
+              <span style="color: var(--color-primary); font-family: var(--font-mono);">${item.count} 柱</span>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('leaderboard-list').innerHTML = '<div style="text-align: center; color: var(--text-muted);">暂无记录</div>';
+        }
+      } catch (e) {
+        document.getElementById('leaderboard-list').innerHTML = '<div style="text-align: center; color: var(--text-muted);">加载失败</div>';
+      }
+    }
+
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    checkAuth();
+  </script>
+
+  <style>
+    .type-btn:hover {
+      transform: scale(1.02);
+    }
+    .type-btn.selected {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px currentColor;
+    }
+    #flame-canvas {
+      background: transparent;
+    }
+  </style>
+</body>
+</html>

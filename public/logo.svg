@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0a1a"/>
+      <stop offset="100%" style="stop-color:#0a0a0f"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect fill="url(#bgGrad)" width="400" height="300"/>
+
+  <!-- Scanlines -->
+  <g opacity="0.05">
+    <line x1="0" y1="5" x2="400" y2="5" stroke="#00f0ff" stroke-width="1"/>
+    <line x1="0" y1="10" x2="400" y2="10" stroke="#00f0ff" stroke-width="1"/>
+    <line x1="0" y1="15" x2="400" y2="15" stroke="#00f0ff" stroke-width="1"/>
+    <line x1="0" y1="20" x2="400" y2="20" stroke="#00f0ff" stroke-width="1"/>
+    <line x1="0" y1="25" x2="400" y2="25" stroke="#00f0ff" stroke-width="1"/>
+    <line x1="0" y1="30" x2="400" y2="30" stroke="#00f0ff" stroke-width="1"/>
+  </g>
+
+  <!-- Incense Burner Body -->
+  <path d="M140 280 Q130 260 135 230 L145 210 Q150 200 150 180 L150 170 Q150 160 160 160 L240 160 Q250 160 250 170 L250 180 Q250 200 255 210 L265 230 Q270 260 260 280 Z"
+        fill="#2a1a3a" stroke="#ff2d6a" stroke-width="2" filter="url(#glow)"/>
+
+  <!-- Burner Pattern -->
+  <circle cx="200" cy="210" r="25" fill="none" stroke="#ffd700" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="200" cy="210" r="18" fill="none" stroke="#ff2d6a" stroke-width="1" opacity="0.8"/>
+
+  <!-- Incense Stick -->
+  <line x1="200" y1="160" x2="200" y2="100" stroke="#8B4513" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Ash Tip -->
+  <ellipse cx="200" cy="100" rx="3" ry="5" fill="#333"/>
+
+  <!-- Flame -->
+  <g id="flame">
+    <path d="M200 100 Q190 85 195 70 Q200 55 200 45 Q200 55 205 70 Q210 85 200 100" fill="#ffd700" opacity="0.9">
+      <animate attributeName="d"
+               values="M200 100 Q190 85 195 70 Q200 55 200 45 Q200 55 205 70 Q210 85 200 100;
+                       M200 100 Q188 83 193 68 Q200 52 200 42 Q200 52 207 68 Q212 83 200 100;
+                       M200 100 Q192 88 197 73 Q200 58 200 48 Q200 58 203 73 Q208 88 200 100;
+                       M200 100 Q190 85 195 70 Q200 55 200 45 Q200 55 205 70 Q210 85 200 100"
+               dur="0.5s" repeatCount="indefinite"/>
+    </path>
+    <path d="M200 100 Q193 90 196 80 Q200 70 200 60 Q200 70 204 80 Q207 90 200 100" fill="#ff6600" opacity="0.8">
+      <animate attributeName="d"
+               values="M200 100 Q193 90 196 80 Q200 70 200 60 Q200 70 204 80 Q207 90 200 100;
+                       M200 100 Q192 88 195 78 Q200 68 200 58 Q200 68 205 78 Q208 88 200 100;
+                       M200 100 Q194 92 197 82 Q200 72 200 62 Q200 72 203 82 Q206 92 200 100;
+                       M200 100 Q193 90 196 80 Q200 70 200 60 Q200 70 204 80 Q207 90 200 100"
+               dur="0.4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M200 100 Q196 95 198 88 Q200 82 200 75 Q200 82 202 88 Q204 95 200 100" fill="#fff" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;0.9;0.6" dur="0.3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- Smoke Particles -->
+  <g opacity="0.4">
+    <circle cx="198" cy="35" r="2" fill="#e0e0e0">
+      <animate attributeName="cy" values="35;20;5" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="198;195;190" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;0.2;0" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="202" cy="30" r="1.5" fill="#e0e0e0">
+      <animate attributeName="cy" values="30;15;0" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+      <animate attributeName="cx" values="202;205;208" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+      <animate attributeName="opacity" values="0.3;0.1;0" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+    <circle cx="200" cy="40" r="1" fill="#e0e0e0">
+      <animate attributeName="cy" values="40;25;10" dur="2.8s" repeatCount="indefinite" begin="1s"/>
+      <animate attributeName="cx" values="200;200;200" dur="2.8s" repeatCount="indefinite" begin="1s"/>
+      <animate attributeName="opacity" values="0.3;0.1;0" dur="2.8s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+  </g>
+
+  <!-- Decorative elements -->
+  <text x="50" y="50" font-family="monospace" font-size="10" fill="#ff2d6a" opacity="0.3">CYBER.ALTAR</text>
+  <text x="280" y="280" font-family="monospace" font-size="10" fill="#00f0ff" opacity="0.3">v1.0.0</text>
+
+  <!-- Corner decorations -->
+  <path d="M10 10 L30 10 L30 15 L15 15 L15 30 L10 30 Z" fill="#ff2d6a" opacity="0.5"/>
+  <path d="M390 10 L370 10 L370 15 L385 15 L385 30 L390 30 Z" fill="#ff2d6a" opacity="0.5"/>
+  <path d="M10 290 L30 290 L30 285 L15 285 L15 270 L10 270 Z" fill="#00f0ff" opacity="0.5"/>
+  <path d="M390 290 L370 290 L370 285 L385 285 L385 270 L390 270 Z" fill="#00f0ff" opacity="0.5"/>
+</svg>

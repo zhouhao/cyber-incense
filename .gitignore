@@ -1,0 +1,8 @@
+wrangler_*.log
+.idea
+node_modules
+.DS_Store
+.output.txt
+.wrangler
+wrangler.toml
+

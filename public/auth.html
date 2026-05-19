@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 / 注册 - 赛博上香</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="logo">
+      <span class="logo-icon">🔥</span>
+      <span class="logo-text glitch">赛博上香</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">返回首页</a>
+    </div>
+  </nav>
+
+  <!-- Auth Form -->
+  <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding-top: 60px;">
+    <div style="width: 100%; max-width: 400px; padding: 2rem;">
+      <!-- Tab Switcher -->
+      <div style="display: flex; margin-bottom: 2rem; border-bottom: 1px solid rgba(255, 45, 106, 0.3);">
+        <button id="tab-login" class="auth-tab active" onclick="switchTab('login')" style="flex: 1; padding: 1rem; background: none; border: none; color: var(--color-primary); font-family: var(--font-heading); font-size: 1rem; cursor: pointer; border-bottom: 2px solid var(--color-primary);">登录</button>
+        <button id="tab-register" class="auth-tab" onclick="switchTab('register')" style="flex: 1; padding: 1rem; background: none; border: none; color: var(--text-muted); font-family: var(--font-heading); font-size: 1rem; cursor: pointer;">注册</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="form-login" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">邮箱 // EMAIL</label>
+          <input type="email" name="email" class="form-input" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码 // PASSWORD</label>
+          <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-gold" style="width: 100%;">进入香炉</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="form-register" onsubmit="handleRegister(event)" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">用户名 // USERNAME</label>
+          <input type="text" name="username" class="form-input" placeholder="赛博信徒" required minlength="3" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label class="form-label">邮箱 // EMAIL</label>
+          <input type="email" name="email" class="form-input" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码 // PASSWORD</label>
+          <input type="password" name="password" class="form-input" placeholder="至少6位" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-gold" style="width: 100%;">创建灵魂</button>
+      </form>
+
+      <div id="error-msg" style="margin-top: 1rem; color: #ff3333; text-align: center; display: none;"></div>
+    </div>
+  </main>
+
+  <script>
+    let currentTab = 'login';
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const loginTab = document.getElementById('tab-login');
+      const registerTab = document.getElementById('tab-register');
+      const loginForm = document.getElementById('form-login');
+      const registerForm = document.getElementById('form-register');
+
+      if (tab === 'login') {
+        loginTab.classList.add('active');
+        loginTab.style.borderBottom = '2px solid var(--color-primary)';
+        loginTab.style.color = 'var(--color-primary)';
+        registerTab.classList.remove('active');
+        registerTab.style.borderBottom = 'none';
+        registerTab.style.color = 'var(--text-muted)';
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+      } else {
+        registerTab.classList.add('active');
+        registerTab.style.borderBottom = '2px solid var(--color-primary)';
+        registerTab.style.color = 'var(--color-primary)';
+        loginTab.classList.remove('active');
+        loginTab.style.borderBottom = 'none';
+        loginTab.style.color = 'var(--text-muted)';
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+      }
+      hideError();
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('error-msg').style.display = 'none';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      hideError();
+
+      const form = e.target;
+      const email = form.email.value;
+      const password = form.password.value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          window.location.href = '/burn';
+        } else {
+          showError(data.error || '登录失败');
+        }
+      } catch (e) {
+        showError('网络错误，请重试');
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      hideError();
+
+      const form = e.target;
+      const username = form.username.value;
+      const email = form.email.value;
+      const password = form.password.value;
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          window.location.href = '/burn';
+        } else {
+          showError(data.error || '注册失败');
+        }
+      } catch (e) {
+        showError('网络错误，请重试');
+      }
+    }
+
+    // Check if already logged in
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          window.location.href = '/burn';
+        }
+      } catch (e) {}
+    }
+
+    checkAuth();
+  </script>
+
+  <style>
+    .auth-tab.active {
+      background: transparent;
+    }
+  </style>
+</body>
+</html>

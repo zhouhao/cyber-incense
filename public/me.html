@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 - 赛博上香</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="logo">
+      <span class="logo-icon">🔥</span>
+      <span class="logo-text glitch">赛博上香</span>
+    </a>
+    <div class="nav-links">
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main style="padding-top: 80px; min-height: 100vh;">
+    <!-- Login Required -->
+    <div id="login-required" style="display: none; text-align: center; padding: 4rem 2rem;">
+      <h2 style="color: var(--color-primary); font-family: var(--font-heading); margin-bottom: 1rem;">请先登录</h2>
+      <a href="/auth" class="btn btn-gold">登录 / 注册</a>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="user-dashboard" style="display: none;">
+      <div class="container" style="max-width: 800px;">
+        <!-- User Stats -->
+        <div class="card" style="margin-bottom: 2rem; text-align: center;">
+          <h2 id="user-greeting" style="color: var(--color-gold); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1rem;">
+            赛博信徒
+          </h2>
+          <div style="display: flex; justify-content: center; gap: 3rem; margin: 2rem 0;">
+            <div>
+              <div id="total-count" style="font-size: 3rem; color: var(--color-primary); font-family: var(--font-mono);">0</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">累计上香</div>
+            </div>
+            <div>
+              <div id="week-count" style="font-size: 3rem; color: var(--color-secondary); font-family: var(--font-mono);">0</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">本周香火</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem;">
+            成就系统 // ACHIEVEMENTS
+          </h3>
+          <div id="achievements-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+            <div class="achievement" data-id="first_incense" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+              <div style="color: var(--text-primary); font-size: 0.85rem;">首次上香</div>
+            </div>
+            <div class="achievement" data-id="incense_10" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔥</div>
+              <div style="color: var(--text-primary); font-size: 0.85rem;">上香10次</div>
+            </div>
+            <div class="achievement" data-id="incense_50" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚡</div>
+              <div style="color: var(--text-primary); font-size: 0.85rem;">上香50次</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Incense History -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem;">
+            香火记录 // MY INCENSE
+          </h3>
+          <div id="incense-history">
+            <div style="text-align: center; color: var(--text-muted);">加载中...</div>
+          </div>
+        </div>
+
+        <!-- Logout -->
+        <div style="text-align: center;">
+          <button class="btn" onclick="logout()" style="border-color: #ff3333; color: #ff3333;">
+            离开香炉
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>赛博上香 // <span>CYBER.ALTAR</span> // 让信仰运行在边缘节点</p>
+  </footer>
+
+  <script>
+    async function checkAuth() {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('nav-user').innerHTML = `
+          <span class="username">${escapeHtml(data.user.username)}</span>
+        `;
+        document.getElementById('user-greeting').textContent = `${escapeHtml(data.user.username)} 的香火档案`;
+        document.getElementById('user-dashboard').style.display = 'block';
+        loadMyData();
+      } else {
+        document.getElementById('login-required').style.display = 'block';
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    async function loadMyData() {
+      try {
+        const [meRes, leaderboardRes] = await Promise.all([
+          fetch('/api/incense/my'),
+          fetch('/api/incense/leaderboard')
+        ]);
+
+        const meData = await meRes.json();
+        const leaderboardData = await leaderboardRes.json();
+
+        // Update counts
+        document.getElementById('total-count').textContent = meData.count || 0;
+
+        // Calculate week count
+        const myEntry = leaderboardData.leaderboard?.find(l => {
+          // We don't have username from /me endpoint directly, but we can check localStorage
+          // For simplicity, just show total
+        });
+        document.getElementById('week-count').textContent = myEntry?.count || 0;
+
+        // Update achievements
+        const achievements = meData.achievements || {};
+        Object.keys(achievements).forEach(key => {
+          if (achievements[key]) {
+            const el = document.querySelector(`.achievement[data-id="${key}"]`);
+            if (el) {
+              el.style.opacity = '1';
+              el.style.border = '1px solid var(--color-gold)';
+              el.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+            }
+          }
+        });
+
+        // Load history
+        const historyEl = document.getElementById('incense-history');
+        if (meData.logs && meData.logs.length > 0) {
+          historyEl.innerHTML = meData.logs.map(log => {
+            const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
+            const typeColors = { career: 'var(--color-primary)', love: 'var(--color-secondary)', health: 'var(--color-gold)', study: '#9b59b6' };
+            const time = new Date(log.created_at).toLocaleString('zh-CN');
+            return `
+              <div style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: flex-start; gap: 1rem;">
+                <span style="font-size: 1.5rem; color: ${typeColors[log.type] || 'var(--text-primary)'}">${typeIcons[log.type] || '🔥'}</span>
+                <div style="flex: 1;">
+                  <div style="color: var(--text-primary);">${escapeHtml(log.wish)}</div>
+                  <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">${time}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          historyEl.innerHTML = '<div style="text-align: center; color: var(--text-muted);">暂无香火记录，去上一柱吧！</div>';
+        }
+      } catch (e) {
+        console.error(e);
+        document.getElementById('incense-history').innerHTML = '<div style="text-align: center; color: var(--text-muted);">加载失败</div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    checkAuth();
+  </script>
+
+  <style>
+    .achievement.unlocked {
+      opacity: 1 !important;
+      border: 1px solid var(--color-gold) !important;
+    }
+  </style>
+</body>
+</html>

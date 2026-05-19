@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>赛博上香 - Cyber Altar</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="logo">
+      <span class="logo-icon">🔥</span>
+      <span class="logo-text glitch">赛博上香</span>
+    </a>
+    <div class="nav-links">
+      <div id="nav-user"></div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="page-header" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div style="text-align: center;">
+      <img src="/logo.svg" alt="Cyber Incense" style="width: 300px; margin-bottom: 2rem; filter: drop-shadow(0 0 20px rgba(255, 45, 106, 0.5));">
+
+      <h1 class="page-title neon-text">数字香火</h1>
+      <h2 class="page-subtitle" style="color: var(--color-secondary); font-family: var(--font-mono); margin-bottom: 0.5rem;">
+        CYBER ALTAR // 灵魂超度 // 赛博祈福
+      </h2>
+      <p class="page-subtitle">
+        在赛博空间点燃电子香，为你的愿望注入灵魂代码。<br>
+        <span style="color: var(--color-gold);">让虚无主义与神秘主义在此交汇。</span>
+      </p>
+
+      <div id="cta-buttons" style="margin-top: 2rem;">
+        <a href="/auth" class="btn btn-gold" style="margin-right: 1rem;">登录 / 注册</a>
+        <a href="/burn" class="btn btn-secondary">进入香炉</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Incense -->
+  <section class="section" style="background: var(--bg-secondary);">
+    <div class="container">
+      <h2 class="page-title" style="font-size: 1.5rem; text-align: center; margin-bottom: 2rem;">
+        <span class="text-secondary">//</span> 近期香火 <span class="text-secondary">//</span>
+      </h2>
+      <div id="recent-list" style="display: grid; gap: 1rem;">
+        <div style="text-align: center; color: var(--text-muted);">加载中...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="container">
+      <h2 class="page-title" style="font-size: 1.5rem; text-align: center; margin-bottom: 2rem;">
+        <span class="text-primary">//</span> 香型选择 <span class="text-primary">//</span>
+      </h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="text-align: center; border-color: var(--color-primary);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💼</div>
+          <h3 style="color: var(--color-primary); font-family: var(--font-heading); margin-bottom: 0.5rem;">事业香</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">为事业注入上升能量<br>打通晋升通道</p>
+        </div>
+        <div class="card" style="text-align: center; border-color: var(--color-secondary);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💕</div>
+          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 0.5rem;">爱情香</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">催化桃花运降临<br>绑定灵魂伴侣</p>
+        </div>
+        <div class="card" style="text-align: center; border-color: var(--color-gold);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
+          <h3 style="color: var(--color-gold); font-family: var(--font-heading); margin-bottom: 0.5rem;">健康香</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">修复身体 BUG<br>重启健康状态</p>
+        </div>
+        <div class="card" style="text-align: center; border-color: #9b59b6;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+          <h3 style="color: #9b59b6; font-family: var(--font-heading); margin-bottom: 0.5rem;">学业香</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">提升学习效率<br>超频脑力输出</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>赛博上香 // <span>CYBER.ALTAR</span> // 让信仰运行在边缘节点</p>
+  </footer>
+
+  <script>
+    // Check auth status
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('nav-user').innerHTML = `
+            <a href="/me" class="nav-link">
+              <span class="username">${escapeHtml(data.user.username)}</span>
+            </a>
+            <button class="btn" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">登出</button>
+          `;
+          document.getElementById('cta-buttons').innerHTML = `
+            <a href="/burn" class="btn btn-gold">进入香炉</a>
+          `;
+        }
+      } catch (e) {
+        // Not logged in
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.reload();
+    }
+
+    // Load recent incense
+    async function loadRecent() {
+      try {
+        const res = await fetch('/api/incense/recent');
+        const data = await res.json();
+
+        if (data.recent && data.recent.length > 0) {
+          const list = document.getElementById('recent-list');
+          list.innerHTML = data.recent.map(log => {
+            const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
+            const time = new Date(log.created_at).toLocaleString('zh-CN');
+            return `
+              <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.5rem;">${typeIcons[log.type] || '🔥'}</span>
+                <div style="flex: 1;">
+                  <div style="color: var(--text-primary);">${escapeHtml(log.wish)}</div>
+                  <div style="color: var(--text-muted); font-size: 0.8rem;">
+                    ${escapeHtml(log.username)} · ${time}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (e) {
+        document.getElementById('recent-list').innerHTML = '<div style="text-align: center; color: var(--text-muted);">暂无记录</div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    checkAuth();
+    loadRecent();
+  </script>
+</body>
+</html>
