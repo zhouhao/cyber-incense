@@ -2,35 +2,15 @@ import { D1Database } from '@cloudflare/workers-types';
 import type { User, IncenseLog } from './types';
 
 export async function initDB(db: D1Database): Promise<void> {
-  // Create users table
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      username TEXT NOT NULL UNIQUE,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      created_at INTEGER NOT NULL
-    )
-  `);
-
-  // Create incense_logs table
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS incense_logs (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
-      type TEXT NOT NULL CHECK(type IN ('career', 'love', 'health', 'study')),
-      wish TEXT NOT NULL,
-      created_at INTEGER NOT NULL
-    )
-  `);
-
-  // Create index for faster queries
-  await db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_incense_user_id ON incense_logs(user_id)
-  `);
-  await db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_incense_created_at ON incense_logs(created_at)
-  `);
+  const statements = [
+    'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL);',
+    'CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL);',
+    'CREATE INDEX IF NOT EXISTS idx_incense_user_id ON incense_logs(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_incense_created_at ON incense_logs(created_at);'
+  ];
+  for (const stmt of statements) {
+    await db.exec(stmt);
+  }
 }
 
 export async function createUser(

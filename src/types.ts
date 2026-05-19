@@ -20,6 +20,7 @@ export interface IncenseLog {
 }
 
 export interface JwtPayload {
+  [key: string]: any;
   sub: string;
   email: string;
   username: string;
