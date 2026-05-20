@@ -31,6 +31,17 @@
     <!-- User Dashboard -->
     <div id="user-dashboard" style="display: none;">
       <div class="container" style="max-width: 800px;">
+        <!-- Active Incense Alert -->
+        <div id="active-incense-alert" class="card" style="display: none; margin-bottom: 2rem; border-color: var(--color-gold);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="color: var(--color-gold); font-family: var(--font-heading); font-size: 0.9rem; margin-bottom: 0.3rem;">🔥 香正在燃烧中</div>
+              <div style="color: var(--text-muted); font-size: 0.85rem;" id="active-incense-info">加载中...</div>
+            </div>
+            <a href="/burn" class="btn btn-gold" style="padding: 0.5rem 1rem; font-size: 0.8rem;">前往观看</a>
+          </div>
+        </div>
+
         <!-- User Stats -->
         <div class="card" style="margin-bottom: 2rem; text-align: center;">
           <h2 id="user-greeting" style="color: var(--color-gold); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1rem;">
@@ -126,6 +137,16 @@
 
         // Update counts
         document.getElementById('total-count').textContent = meData.count || 0;
+
+        // Show active incense alert if there's one burning
+        if (meData.active_incense) {
+          const active = meData.active_incense;
+          const remainingMins = Math.ceil(active.remaining_ms / 60000);
+          const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
+          document.getElementById('active-incense-alert').style.display = 'block';
+          document.getElementById('active-incense-info').textContent =
+            `${typeIcons[active.type] || '🔥'} ${active.wish.substring(0, 20)}${active.wish.length > 20 ? '...' : ''} · 剩余约 ${remainingMins} 分钟`;
+        }
 
         // Calculate week count
         const myEntry = leaderboardData.leaderboard?.find(l => {

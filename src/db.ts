@@ -2,17 +2,35 @@ import { D1Database } from '@cloudflare/workers-types';
 import type { User, IncenseLog, WoodFishLog } from './types';
 
 export async function initDB(db: D1Database): Promise<void> {
-  const statements = [
-    'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL);',
-    'CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL);',
-    'CREATE INDEX IF NOT EXISTS idx_incense_user_id ON incense_logs(user_id);',
-    'CREATE INDEX IF NOT EXISTS idx_incense_created_at ON incense_logs(created_at);',
-    'CREATE TABLE IF NOT EXISTS wood_fish_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), count INTEGER NOT NULL DEFAULT 1, merit INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL);',
-    'CREATE INDEX IF NOT EXISTS idx_woodfish_user_id ON wood_fish_logs(user_id);'
-  ];
-  for (const stmt of statements) {
-    await db.exec(stmt);
+  // Handle migration: add burned_at column if it doesn't exist
+  try {
+    const columnsResult = await db.prepare("PRAGMA table_info(incense_logs)").all();
+    const columns = columnsResult.results.map((r: any) => r.name);
+    if (!columns.includes('burned_at')) {
+      await db.exec('ALTER TABLE incense_logs ADD COLUMN burned_at INTEGER NOT NULL DEFAULT 0');
+    }
+  } catch (e) {
+    // Table doesn't exist yet, will be created below
   }
+
+  // Create tables
+  await db.exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL)');
+  await db.exec('CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL, burned_at INTEGER NOT NULL DEFAULT 0)');
+  await db.exec('CREATE TABLE IF NOT EXISTS wood_fish_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), count INTEGER NOT NULL DEFAULT 1, merit INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL)');
+
+  // Create indexes (ignore errors if already exist)
+  try {
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_incense_user_id ON incense_logs(user_id)');
+  } catch (e) {}
+  try {
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_incense_created_at ON incense_logs(created_at)');
+  } catch (e) {}
+  try {
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_incense_burned_at ON incense_logs(burned_at)');
+  } catch (e) {}
+  try {
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_woodfish_user_id ON wood_fish_logs(user_id)');
+  } catch (e) {}
 }
 
 export async function createUser(
@@ -73,15 +91,16 @@ export async function createIncenseLog(
   wish: string
 ): Promise<IncenseLog | null> {
   const createdAt = Date.now();
+  const burnedAt = createdAt + 15 * 60 * 1000; // 15 minutes later
   const result = await db
     .prepare(
-      'INSERT INTO incense_logs (id, user_id, type, wish, created_at) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO incense_logs (id, user_id, type, wish, created_at, burned_at) VALUES (?, ?, ?, ?, ?, ?)'
     )
-    .bind(id, userId, type, wish, createdAt)
+    .bind(id, userId, type, wish, createdAt, burnedAt)
     .run();
 
   if (result.success) {
-    return { id, user_id: userId, type, wish, created_at: createdAt };
+    return { id, user_id: userId, type, wish, created_at: createdAt, burned_at: burnedAt };
   }
   return null;
 }
@@ -99,6 +118,21 @@ export async function getUserIncenseLogs(
     .all<IncenseLog>();
 
   return result.results;
+}
+
+export async function getUserActiveIncense(
+  db: D1Database,
+  userId: string
+): Promise<IncenseLog | null> {
+  const now = Date.now();
+  const result = await db
+    .prepare(
+      'SELECT * FROM incense_logs WHERE user_id = ? AND burned_at > ? ORDER BY created_at DESC LIMIT 1'
+    )
+    .bind(userId, now)
+    .first<IncenseLog>();
+
+  return result || null;
 }
 
 export async function getLeaderboard(

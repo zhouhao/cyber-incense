@@ -5,6 +5,410 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>上香 - 赛博上香</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Burning incense styles */
+    .incense-container {
+      position: relative;
+      width: 100px;
+      height: 420px;
+      margin: 3rem auto;
+      background: rgba(255, 215, 0, 0.05);
+      border: 1px dashed rgba(255, 215, 0, 0.2);
+      border-radius: 8px;
+    }
+
+    .incense-stick {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 350px;
+      background: linear-gradient(to top,
+        #8B4513 0%,
+        #D2691E 30%,
+        #DEB887 80%,
+        #F5DEB3 95%,
+        #FFD700 100%
+      );
+      border-radius: 2px 2px 4px 4px;
+      transition: height 0.5s linear;
+    }
+
+    .incense-stick.burning {
+      box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    }
+
+    /* Flame - positioned relative to incense stick top */
+    .flame-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 380px;
+      opacity: 0;
+      transition: bottom 0.5s linear, opacity 0.3s;
+    }
+
+    .flame-container.active {
+      opacity: 1;
+    }
+
+    .flame {
+      width: 20px;
+      height: 40px;
+      background: linear-gradient(to top,
+        #ff6600 0%,
+        #ff9500 40%,
+        #ffcc00 70%,
+        #fff 100%
+      );
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      animation: flicker 0.3s ease-in-out infinite alternate;
+      filter: blur(1px);
+    }
+
+    .flame::after {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 20px;
+      background: linear-gradient(to top, #fff, #ffcc00);
+      border-radius: 50%;
+      animation: flickerInner 0.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes flicker {
+      0% { transform: scaleY(1) scaleX(1) rotate(-2deg); }
+      100% { transform: scaleY(1.1) scaleX(0.9) rotate(2deg); }
+    }
+
+    @keyframes flickerInner {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+/* Smoke particles - positioned at incense top, follows incense height */
+    .smoke-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 100px;
+      bottom: 390px;
+      pointer-events: none;
+      transition: bottom 0.5s linear;
+    }
+
+    .smoke {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(200, 200, 200, 0.3);
+      border-radius: 50%;
+      animation: rise 3s ease-out forwards;
+    }
+
+    @keyframes rise {
+      0% {
+        opacity: 0.6;
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        opacity: 0.3;
+        transform: translateY(-30px) scale(1.5) translateX(var(--drift, 5px));
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(2) translateX(calc(var(--drift, 5px) * 2));
+      }
+    }
+
+    /* Ash falling effect - positioned below incense */
+    .ash-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 30px;
+      pointer-events: none;
+      transition: bottom 0.5s linear;
+    }
+
+    .ash-particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: #888;
+      border-radius: 50%;
+      animation: fall 2s linear forwards;
+    }
+
+    @keyframes fall {
+      0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100px) translateX(var(--drift, 10px));
+      }
+    }
+
+    /* Ash falling effect - positioned below incense */
+    .ash-container {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 30px;
+      pointer-events: none;
+    }
+
+    .ash-particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: #888;
+      border-radius: 50%;
+      animation: fall 2s linear forwards;
+    }
+
+    @keyframes fall {
+      0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100px) translateX(var(--drift, 10px));
+      }
+    }
+
+    .smoke {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(200, 200, 200, 0.3);
+      border-radius: 50%;
+      animation: rise 3s ease-out forwards;
+    }
+
+    @keyframes rise {
+      0% {
+        opacity: 0.6;
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        opacity: 0.3;
+        transform: translateY(-30px) scale(1.5) translateX(var(--drift, 5px));
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(2) translateX(calc(var(--drift, 5px) * 2));
+      }
+    }
+
+    .smoke {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(200, 200, 200, 0.3);
+      border-radius: 50%;
+      animation: rise 3s ease-out forwards;
+    }
+
+    @keyframes rise {
+      0% {
+        opacity: 0.6;
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        opacity: 0.3;
+        transform: translateY(-30px) scale(1.5) translateX(var(--drift, 5px));
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(2) translateX(calc(var(--drift, 5px) * 2));
+      }
+    }
+
+    /* Timer display */
+    .timer-display {
+      font-family: var(--font-mono);
+      font-size: 2rem;
+      color: var(--color-primary);
+      text-shadow: 0 0 20px rgba(255, 45, 106, 0.5);
+      margin: 1rem 0;
+    }
+
+    .timer-display.warning {
+      color: var(--color-gold);
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Progress bar */
+    .progress-container {
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto 2rem;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: rgba(255, 45, 106, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-gold));
+      border-radius: 3px;
+      transition: width 1s linear;
+      box-shadow: 0 0 10px rgba(255, 45, 106, 0.5);
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-family: var(--font-heading);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .status-badge.burning {
+      background: rgba(255, 45, 106, 0.2);
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    .status-badge.done {
+      background: rgba(106, 106, 122, 0.2);
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 45, 106, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(255, 45, 106, 0.6); }
+    }
+
+    /* Wish display */
+    .wish-display {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(255, 45, 106, 0.3);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 2rem auto;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+    }
+
+    .wish-display::before {
+      content: '祈愿文';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-primary);
+      padding: 0 1rem;
+      color: var(--color-secondary);
+      font-family: var(--font-heading);
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+    }
+
+    .wish-text {
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .wish-type {
+      margin-top: 1rem;
+      font-size: 1.5rem;
+    }
+
+    /* Burn form */
+    .burn-form {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .type-btn {
+      background: var(--bg-secondary);
+      border: 2px solid;
+      padding: 1rem 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .type-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .type-btn.selected {
+      box-shadow: 0 0 20px currentColor;
+    }
+
+    .type-btn[data-type="career"] { border-color: var(--color-primary); }
+    .type-btn[data-type="career"].selected { background: rgba(255, 45, 106, 0.2); }
+    .type-btn[data-type="career"] .type-icon { color: var(--color-primary); }
+
+    .type-btn[data-type="love"] { border-color: var(--color-secondary); }
+    .type-btn[data-type="love"].selected { background: rgba(0, 240, 255, 0.2); }
+    .type-btn[data-type="love"] .type-icon { color: var(--color-secondary); }
+
+    .type-btn[data-type="health"] { border-color: var(--color-gold); }
+    .type-btn[data-type="health"].selected { background: rgba(255, 215, 0, 0.2); }
+    .type-btn[data-type="health"] .type-icon { color: var(--color-gold); }
+
+    .type-btn[data-type="study"] { border-color: #9b59b6; }
+    .type-btn[data-type="study"].selected { background: rgba(155, 89, 182, 0.2); }
+    .type-btn[data-type="study"] .type-icon { color: #9b59b6; }
+
+    .type-name {
+      font-family: var(--font-heading);
+      font-size: 0.7rem;
+      margin-top: 0.3rem;
+    }
+
+    /* Ashes after burn */
+    .ashes-display {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 3rem;
+      margin: 2rem 0;
+      opacity: 0.5;
+    }
+
+    .restart-btn {
+      margin-top: 2rem;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -20,67 +424,127 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
   <main style="padding-top: 80px; min-height: 100vh;">
-    <!-- Login Required Notice -->
+    <!-- Login Required -->
     <div id="login-required" style="display: none; text-align: center; padding: 4rem 2rem;">
       <h2 style="color: var(--color-primary); font-family: var(--font-heading); margin-bottom: 1rem;">请先登录</h2>
       <p style="color: var(--text-muted); margin-bottom: 2rem;">点燃香火需要你的灵魂在场</p>
       <a href="/auth" class="btn btn-gold">登录 / 注册</a>
     </div>
 
-    <!-- Burn Interface -->
-    <div id="burn-interface" style="display: none;">
-      <div class="container" style="max-width: 800px;">
-        <!-- Incense Burner Animation -->
-        <div style="text-align: center; margin: 2rem 0;">
-          <div id="incense-burner" style="position: relative; display: inline-block;">
-            <canvas id="flame-canvas" width="200" height="250"></canvas>
-            <div id="smoke-container" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none;"></div>
+    <!-- Main Interface -->
+    <div id="main-interface" style="display: none;">
+      <div class="container" style="max-width: 600px; text-align: center;">
+
+        <!-- Active Incense View -->
+        <div id="active-incense-view" style="display: none;">
+          <h1 style="color: var(--color-primary); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1rem;">
+            燃香中...
+          </h1>
+
+          <div class="status-badge burning">祈福进行中</div>
+
+          <!-- Incense Visualization -->
+          <div class="incense-container">
+            <div class="flame-container" id="flame">
+              <div class="flame"></div>
+            </div>
+            <div class="smoke-container" id="smoke"></div>
+            <div class="incense-stick" id="incense-stick"></div>
+            <div class="ash-container" id="ash-container"></div>
           </div>
-          <p id="burn-status" style="color: var(--text-muted); font-family: var(--font-mono); margin-top: 1rem;">选择香型，开始祈福</p>
+
+          <!-- Timer -->
+          <div class="timer-display" id="timer">15:00</div>
+
+          <!-- Progress -->
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progress" style="width: 100%"></div>
+            </div>
+          </div>
+
+          <!-- Wish Display -->
+          <div class="wish-display">
+            <div class="wish-text" id="active-wish">加载中...</div>
+            <div class="wish-type" id="active-type-icon">🔥</div>
+          </div>
+
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2rem;">
+            香燃烧时可以在此页面观看<br>
+            燃尽后可再点一柱
+          </p>
         </div>
 
-        <!-- Type Selection -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
-          <button class="type-btn" data-type="career" style="background: var(--bg-secondary); border: 2px solid var(--color-primary); padding: 1rem; cursor: pointer; transition: all 0.3s;">
-            <div style="font-size: 2rem;">💼</div>
-            <div style="color: var(--color-primary); font-family: var(--font-heading); margin-top: 0.5rem;">事业香</div>
-          </button>
-          <button class="type-btn" data-type="love" style="background: var(--bg-secondary); border: 2px solid var(--color-secondary); padding: 1rem; cursor: pointer; transition: all 0.3s;">
-            <div style="font-size: 2rem;">💕</div>
-            <div style="color: var(--color-secondary); font-family: var(--font-heading); margin-top: 0.5rem;">爱情香</div>
-          </button>
-          <button class="type-btn" data-type="health" style="background: var(--bg-secondary); border: 2px solid var(--color-gold); padding: 1rem; cursor: pointer; transition: all 0.3s;">
-            <div style="font-size: 2rem;">💪</div>
-            <div style="color: var(--color-gold); font-family: var(--font-heading); margin-top: 0.5rem;">健康香</div>
-          </button>
-          <button class="type-btn" data-type="study" style="background: var(--bg-secondary); border: 2px solid #9b59b6; padding: 1rem; cursor: pointer; transition: all 0.3s;">
-            <div style="font-size: 2rem;">📚</div>
-            <div style="color: #9b59b6; font-family: var(--font-heading); margin-top: 0.5rem;">学业香</div>
-          </button>
-        </div>
+        <!-- No Active Incense - Show Form -->
+        <div id="burn-form-view">
+          <h1 style="color: var(--color-primary); font-family: var(--font-heading); font-size: 2rem; margin-bottom: 0.5rem;">
+            点燃香火
+          </h1>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">
+            一炷香 = 15分钟<br>
+            在香火燃尽前，你可以随时回来查看
+          </p>
 
-        <!-- Wish Form -->
-        <div class="card" style="max-width: 600px; margin: 0 auto 2rem;">
-          <form id="wish-form">
+          <form id="incense-form" class="burn-form">
             <div class="form-group">
-              <label class="form-label">祈愿文 // WISH</label>
-              <textarea id="wish-input" class="form-input" rows="3" maxlength="100" placeholder="在这里输入你的愿望...（最多100字）" required></textarea>
+              <label class="form-label">选择香型</label>
+              <div class="type-grid">
+                <button type="button" class="type-btn" data-type="career">
+                  <div class="type-icon">💼</div>
+                  <div class="type-name">事业</div>
+                </button>
+                <button type="button" class="type-btn" data-type="love">
+                  <div class="type-icon">💕</div>
+                  <div class="type-name">爱情</div>
+                </button>
+                <button type="button" class="type-btn" data-type="health">
+                  <div class="type-icon">💪</div>
+                  <div class="type-name">健康</div>
+                </button>
+                <button type="button" class="type-btn" data-type="study">
+                  <div class="type-icon">📚</div>
+                  <div class="type-name">学业</div>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">祈愿文</label>
+              <textarea id="wish-input" class="form-input" rows="3" maxlength="100" placeholder="在这里输入你的愿望..." required></textarea>
               <div style="text-align: right; color: var(--text-muted); font-size: 0.8rem;">
                 <span id="char-count">0</span> / 100
               </div>
             </div>
-            <button type="submit" id="burn-btn" class="btn btn-gold" style="width: 100%;" disabled>
+
+            <button type="submit" id="submit-btn" class="btn btn-gold" style="width: 100%;" disabled>
               点燃香火
             </button>
           </form>
         </div>
 
+        <!-- Incense Burned - Show Ashes -->
+        <div id="burned-view" style="display: none;">
+          <h1 style="color: var(--text-muted); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1rem;">
+            香已燃尽
+          </h1>
+
+          <div class="ashes-display">香灰 ♾️</div>
+
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">
+            你的祈愿已传达虚空<br>
+            愿愿望成真
+          </p>
+
+          <button class="btn btn-gold restart-btn" onclick="location.reload()">
+            再点一柱
+          </button>
+        </div>
+
         <!-- Leaderboard -->
-        <div class="card" style="margin-top: 2rem;">
-          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem; text-align: center;">
-            本周香火榜 // TOP INCENSE
+        <div class="card" style="margin-top: 3rem;">
+          <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem;">
+            本周香火榜
           </h3>
           <div id="leaderboard-list">
             <div style="text-align: center; color: var(--text-muted);">加载中...</div>
@@ -95,8 +559,13 @@
   </footer>
 
   <script>
+    const TOTAL_DURATION = 15 * 60 * 1000; // 15 minutes in ms
+    const INCENSE_HEIGHT = 350; // px
+    let activeIncense = null;
+    let animationInterval = null;
+    let smokeInterval = null;
+    let ashInterval = null;
     let selectedType = null;
-    let isBurning = false;
 
     // Check auth
     async function checkAuth() {
@@ -107,7 +576,8 @@
           <a href="/me" class="nav-link"><span class="username">${escapeHtml(data.user.username)}</span></a>
           <button class="btn" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">登出</button>
         `;
-        document.getElementById('burn-interface').style.display = 'block';
+        document.getElementById('main-interface').style.display = 'block';
+        loadMyData();
         loadLeaderboard();
       } else {
         document.getElementById('login-required').style.display = 'block';
@@ -119,47 +589,194 @@
       window.location.href = '/';
     }
 
+    // Load my data
+    async function loadMyData() {
+      const res = await fetch('/api/incense/my');
+      const data = await res.json();
+
+      if (data.active_incense) {
+        showActiveIncense(data.active_incense);
+      } else {
+        showBurnForm();
+      }
+    }
+
+    // Show active incense view
+    function showActiveIncense(incense) {
+      activeIncense = incense;
+
+      document.getElementById('active-incense-view').style.display = 'block';
+      document.getElementById('burn-form-view').style.display = 'none';
+      document.getElementById('burned-view').style.display = 'none';
+
+      // Set wish
+      const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
+      document.getElementById('active-wish').textContent = incense.wish;
+      document.getElementById('active-type-icon').textContent = typeIcons[incense.type] || '🔥';
+
+      // Start animation
+      startIncenseAnimation();
+    }
+
+    // Show burn form
+    function showBurnForm() {
+      document.getElementById('active-incense-view').style.display = 'none';
+      document.getElementById('burn-form-view').style.display = 'block';
+      document.getElementById('burned-view').style.display = 'none';
+    }
+
+    // Start incense animation
+    function startIncenseAnimation() {
+      const stick = document.getElementById('incense-stick');
+      const flame = document.getElementById('flame');
+      const smoke = document.getElementById('smoke');
+      const ashContainer = document.getElementById('ash-container');
+      const timer = document.getElementById('timer');
+      const progress = document.getElementById('progress');
+
+      flame.classList.add('active');
+      stick.classList.add('burning');
+
+      // Set initial positions at top of full-height incense
+      flame.style.bottom = (30 + INCENSE_HEIGHT) + 'px';
+      smoke.style.bottom = (30 + INCENSE_HEIGHT + 10) + 'px';
+      ashContainer.style.bottom = '0px';
+
+      function update() {
+        if (!activeIncense) return;
+
+        const now = Date.now();
+        const remaining = Math.max(0, activeIncense.burned_at - now);
+        const remainingSeconds = Math.ceil(remaining / 1000);
+        const progressPercent = (remaining / TOTAL_DURATION) * 100;
+
+        // Update height (incense gets shorter)
+        const remainingRatio = remaining / TOTAL_DURATION;
+        const height = Math.max(0, INCENSE_HEIGHT * remainingRatio);
+        stick.style.height = height + 'px';
+
+        // Update flame and smoke position to follow incense top (moves down as incense burns)
+        // bottom = 30px (base plate) + height of remaining incense
+        const bottomPos = 30 + height;
+        flame.style.bottom = bottomPos + 'px';
+        smoke.style.bottom = (bottomPos + 10) + 'px';
+        ashContainer.style.bottom = (bottomPos - 20) + 'px';
+
+        // Update timer
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        timer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+        // Update progress
+        progress.style.width = progressPercent + '%';
+
+        // Warning state
+        if (remaining < 60000) {
+          timer.classList.add('warning');
+        }
+
+        // Check if done
+        if (remaining <= 0) {
+          stopAnimations();
+          showBurnedState();
+          return;
+        }
+
+        animationInterval = setTimeout(update, 1000);
+      }
+
+      update();
+    }
+
+    // Smoke animation
+    function startSmokeAnimation() {
+      const container = document.getElementById('smoke');
+
+      smokeInterval = setInterval(() => {
+        if (!activeIncense) {
+          clearInterval(smokeInterval);
+          return;
+        }
+
+        const smoke = document.createElement('div');
+        smoke.className = 'smoke';
+        smoke.style.setProperty('--drift', (Math.random() * 20 - 10) + 'px');
+        smoke.style.left = (25 + Math.random() * 10) + 'px';
+        container.appendChild(smoke);
+
+        setTimeout(() => smoke.remove(), 3000);
+      }, 500);
+    }
+
+    // Ash animation
+    function startAshAnimation() {
+      const container = document.getElementById('ash-container');
+
+      ashInterval = setInterval(() => {
+        if (!activeIncense) {
+          clearInterval(ashInterval);
+          return;
+        }
+
+        const ash = document.createElement('div');
+        ash.className = 'ash-particle';
+        ash.style.setProperty('--drift', (Math.random() * 30 - 15) + 'px');
+        ash.style.left = (8 + Math.random() * 4) + 'px';
+        ash.style.animationDuration = (1.5 + Math.random()) + 's';
+        container.appendChild(ash);
+
+        setTimeout(() => ash.remove(), 2500);
+      }, 800);
+    }
+
+    // Stop all animations
+    function stopAnimations() {
+      if (animationInterval) clearTimeout(animationInterval);
+      if (smokeInterval) clearInterval(smokeInterval);
+      if (ashInterval) clearInterval(ashInterval);
+
+      document.getElementById('flame').classList.remove('active');
+      document.getElementById('incense-stick').classList.remove('burning');
+    }
+
+    // Show burned state
+    function showBurnedState() {
+      document.getElementById('active-incense-view').style.display = 'none';
+      document.getElementById('burn-form-view').style.display = 'none';
+      document.getElementById('burned-view').style.display = 'block';
+    }
+
     // Type selection
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => {
-          b.style.transform = 'scale(1)';
-          b.style.boxShadow = 'none';
-        });
-        btn.style.transform = 'scale(1.05)';
-        btn.style.boxShadow = '0 0 20px currentColor';
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
         selectedType = btn.dataset.type;
-        document.getElementById('burn-btn').disabled = false;
-        document.getElementById('burn-status').textContent = `已选择 ${getTypeName(selectedType)}，输入祈愿文后点燃`;
+        updateSubmitButton();
       });
     });
-
-    function getTypeName(type) {
-      const names = { career: '事业香', love: '爱情香', health: '健康香', study: '学业香' };
-      return names[type] || type;
-    }
 
     // Character counter
     document.getElementById('wish-input').addEventListener('input', (e) => {
       document.getElementById('char-count').textContent = e.target.value.length;
+      updateSubmitButton();
     });
 
-    // Burn incense
-    document.getElementById('wish-form').addEventListener('submit', async (e) => {
+    function updateSubmitButton() {
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = !selectedType || !document.getElementById('wish-input').value.trim();
+    }
+
+    // Submit form
+    document.getElementById('incense-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!selectedType || isBurning) return;
 
       const wish = document.getElementById('wish-input').value.trim();
-      if (!wish) return;
+      if (!selectedType || !wish) return;
 
-      isBurning = true;
-      const btn = document.getElementById('burn-btn');
+      const btn = document.getElementById('submit-btn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> 燃烧中...';
-
-      // Start flame animation
-      startFlameAnimation();
-      document.getElementById('burn-status').textContent = '香火燃烧中...';
+      btn.innerHTML = '<span class="spinner"></span> 点燃中...';
 
       try {
         const res = await fetch('/api/incense', {
@@ -171,109 +788,19 @@
         const data = await res.json();
 
         if (res.ok) {
-          document.getElementById('burn-status').textContent = '祈愿已传达虚空 ✨';
-          document.getElementById('burn-status').style.color = 'var(--color-gold)';
-
-          // Show achievements
-          if (data.data.achievements && data.data.achievements.length > 0) {
-            const achievementNames = {
-              first_incense: '首次上香',
-              incense_10: '上香10次',
-              incense_50: '上香50次'
-            };
-            const achieved = data.data.achievements.map(a => achievementNames[a]).join(', ');
-            setTimeout(() => {
-              showToast(`🏆 成就解锁: ${achieved}`, 'success');
-            }, 1500);
-          }
-
-          // Reset form
-          setTimeout(() => {
-            selectedType = null;
-            document.querySelectorAll('.type-btn').forEach(b => {
-              b.style.transform = 'scale(1)';
-              b.style.boxShadow = 'none';
-            });
-            document.getElementById('wish-input').value = '';
-            document.getElementById('char-count').textContent = '0';
-            btn.disabled = true;
-            btn.textContent = '点燃香火';
-            document.getElementById('burn-status').textContent = '选择香型，开始祈福';
-            document.getElementById('burn-status').style.color = '';
-            stopFlameAnimation();
-            loadLeaderboard();
-          }, 2000);
+          showActiveIncense(data.data);
+          loadLeaderboard();
         } else {
           showToast(data.error || '上香失败', 'error');
-          stopFlameAnimation();
           btn.disabled = false;
           btn.textContent = '点燃香火';
         }
       } catch (e) {
         showToast('网络错误', 'error');
-        stopFlameAnimation();
         btn.disabled = false;
         btn.textContent = '点燃香火';
       }
-
-      isBurning = false;
     });
-
-    // Flame animation
-    let flameAnimationId = null;
-    function startFlameAnimation() {
-      const canvas = document.getElementById('flame-canvas');
-      const ctx = canvas.getContext('2d');
-      let phase = 0;
-
-      function drawFlame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw incense stick
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(98, 150, 4, 80);
-
-        // Draw flame
-        phase += 0.15;
-        const flicker = Math.sin(phase) * 5;
-        const flicker2 = Math.cos(phase * 0.7) * 3;
-
-        // Outer flame
-        ctx.beginPath();
-        ctx.moveTo(100, 150);
-        ctx.quadraticCurveTo(80 + flicker, 100, 100 + flicker2, 50);
-        ctx.quadraticCurveTo(120 + flicker, 100, 100, 150);
-        ctx.fillStyle = '#ffd700';
-        ctx.fill();
-
-        // Inner flame
-        ctx.beginPath();
-        ctx.moveTo(100, 150);
-        ctx.quadraticCurveTo(90 + flicker2, 120, 100 + flicker, 70);
-        ctx.quadraticCurveTo(110 + flicker2, 120, 100, 150);
-        ctx.fillStyle = '#ff6600';
-        ctx.fill();
-
-        // Core
-        ctx.beginPath();
-        ctx.moveTo(100, 150);
-        ctx.quadraticCurveTo(96, 130, 100 + flicker * 0.5, 90);
-        ctx.quadraticCurveTo(104 + flicker * 0.5, 130, 100, 150);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
-
-        flameAnimationId = requestAnimationFrame(drawFlame);
-      }
-
-      drawFlame();
-    }
-
-    function stopFlameAnimation() {
-      if (flameAnimationId) {
-        cancelAnimationFrame(flameAnimationId);
-        flameAnimationId = null;
-      }
-    }
 
     // Load leaderboard
     async function loadLeaderboard() {
@@ -314,18 +841,5 @@
 
     checkAuth();
   </script>
-
-  <style>
-    .type-btn:hover {
-      transform: scale(1.02);
-    }
-    .type-btn.selected {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px currentColor;
-    }
-    #flame-canvas {
-      background: transparent;
-    }
-  </style>
 </body>
 </html>

@@ -1,5 +1,5 @@
 import type { Env } from './types';
-import { createIncenseLog, getUserIncenseLogs, getLeaderboard, getUserIncenseCount, getRecentIncenseLogs } from './db';
+import { createIncenseLog, getUserIncenseLogs, getLeaderboard, getUserIncenseCount, getRecentIncenseLogs, getUserActiveIncense } from './db';
 
 const VALID_TYPES = ['career', 'love', 'health', 'study'];
 
@@ -47,6 +47,8 @@ export async function burnIncense(
       type: log.type,
       wish: log.wish,
       created_at: log.created_at,
+      burned_at: log.burned_at,
+      remaining_ms: log.burned_at - Date.now(),
       count,
       achievements,
     },
@@ -56,10 +58,19 @@ export async function burnIncense(
 export async function getMyIncense(env: Env, userId: string) {
   const logs = await getUserIncenseLogs(env.DB, userId);
   const count = await getUserIncenseCount(env.DB, userId);
+  const activeIncense = await getUserActiveIncense(env.DB, userId);
 
   return {
     logs,
     count,
+    active_incense: activeIncense ? {
+      id: activeIncense.id,
+      type: activeIncense.type,
+      wish: activeIncense.wish,
+      created_at: activeIncense.created_at,
+      burned_at: activeIncense.burned_at,
+      remaining_ms: activeIncense.burned_at - Date.now(),
+    } : null,
     achievements: {
       first_incense: count >= 1,
       incense_10: count >= 10,
