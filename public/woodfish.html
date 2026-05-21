@@ -6,161 +6,146 @@
   <title>赛博敲木鱼 - Cyber Woodfish</title>
   <link rel="stylesheet" href="/style.css">
   <style>
-    /* Woodfish specific styles */
-    .woodfish-container {
+    /* Woodfish container */
+    .woodfish-wrapper {
       position: relative;
-      width: 280px;
-      height: 280px;
+      width: 400px;
+      height: 300px;
       margin: 2rem auto;
-      cursor: pointer;
-      user-select: none;
     }
 
+    /* Woodfish body SVG */
     .woodfish-body {
       width: 100%;
       height: 100%;
-      background: linear-gradient(145deg, #2a1a0a, #1a0a00);
-      border-radius: 50% 50% 45% 45%;
-      border: 3px solid #8B4513;
-      box-shadow:
-        0 0 30px rgba(139, 69, 19, 0.5),
-        inset 0 0 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-      transition: transform 0.1s ease;
+      cursor: pointer;
+      transition: transform 0.05s ease;
+      filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4));
     }
 
-    .woodfish-body.tapping {
-      transform: scale(0.95);
-      box-shadow:
-        0 0 50px rgba(255, 215, 0, 0.8),
-        inset 0 0 60px rgba(0, 0, 0, 0.5);
+    .woodfish-body:active {
+      transform: scale(0.98);
     }
 
-    /* Wood grain pattern */
-    .woodfish-body::before {
+    .woodfish-body.shake {
+      animation: woodfishShake 0.15s ease-out;
+    }
+
+    @keyframes woodfishShake {
+      0% { transform: translateX(0) rotate(0); }
+      25% { transform: translateX(-3px) rotate(-1deg); }
+      75% { transform: translateX(3px) rotate(1deg); }
+      100% { transform: translateX(0) rotate(0); }
+    }
+
+    /* Hit flash effect on the slit */
+    .woodfish-body.hit::after {
       content: '';
       position: absolute;
-      top: 10%;
-      left: 10%;
-      width: 80%;
-      height: 80%;
-      background: repeating-linear-gradient(
-        85deg,
-        transparent,
-        transparent 8px,
-        rgba(139, 69, 19, 0.1) 8px,
-        rgba(139, 69, 19, 0.1) 10px
-      );
-      border-radius: 50% 50% 45% 45%;
-      pointer-events: none;
-    }
-
-    /* Golden text on woodfish */
-    .woodfish-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: var(--font-heading);
-      font-size: 3rem;
-      color: #ffd700;
-      text-shadow:
-        0 0 10px #ffd700,
-        0 0 20px #ffd700,
-        2px 2px 4px rgba(0,0,0,0.8);
-      pointer-events: none;
-    }
-
-    /* Tap indicator ring */
-    .tap-ring {
-      position: absolute;
-      top: 50%;
+      top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 200px;
-      height: 200px;
-      border: 2px solid rgba(255, 215, 0, 0.3);
-      border-radius: 50%;
+      height: 30px;
+      background: radial-gradient(ellipse, rgba(255, 215, 0, 0.8) 0%, transparent 70%);
+      animation: hitFlash 0.2s ease-out forwards;
       pointer-events: none;
+    }
+
+    @keyframes hitFlash {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+    }
+
+    /* Mallet (木鱼棒) */
+    .mallet {
+      position: absolute;
+      top: -20px;
+      right: 20px;
+      width: 80px;
+      height: 280px;
       opacity: 0;
+      transform: rotate(-45deg) scale(0.8);
+      transform-origin: bottom center;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+      z-index: 10;
     }
 
-    .tap-ring.active {
-      animation: ripple 0.6s ease-out;
+    .woodfish-wrapper:hover .mallet,
+    .mallet.visible {
+      opacity: 1;
+      transform: rotate(-20deg) scale(1);
     }
 
-    @keyframes ripple {
+    /* Mallet strike animation */
+    .mallet.striking {
+      animation: malletStrike 0.25s ease-out;
+    }
+
+    @keyframes malletStrike {
+      0% { transform: rotate(-20deg) scale(1); }
+      40% { transform: rotate(45deg) scale(1.1) translateY(-10px); }
+      70% { transform: rotate(35deg) scale(1.05); }
+      100% { transform: rotate(-20deg) scale(1); }
+    }
+
+    /* Ripple effect on woodfish */
+    .ripple {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 40px;
+      border: 2px solid rgba(255, 215, 0, 0.6);
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .ripple.active {
+      animation: rippleEffect 0.5s ease-out;
+    }
+
+    @keyframes rippleEffect {
       0% {
-        width: 150px;
-        height: 150px;
+        width: 80px;
+        height: 40px;
         opacity: 0.8;
       }
       100% {
         width: 300px;
-        height: 300px;
+        height: 150px;
         opacity: 0;
       }
     }
 
-    /* Stats display */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin: 2rem 0;
-    }
-
-    .stat-card {
-      background: var(--bg-secondary);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      padding: 1.5rem;
-      text-align: center;
-      border-radius: 4px;
-    }
-
-    .stat-value {
-      font-family: var(--font-mono);
-      font-size: 2.5rem;
-      color: #ffd700;
-      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-    }
-
-    .stat-label {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-top: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
     /* Tap count selector */
-    .tap-selector {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin: 1rem 0;
-      flex-wrap: wrap;
-    }
+    
 
-    .tap-option {
-      padding: 0.5rem 1rem;
-      background: var(--bg-secondary);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      color: var(--text-primary);
+    /* Quick tap button */
+    .quick-tap-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #3a2a1a, #2a1a0a);
+      border: 3px solid #ffd700;
+      color: #ffd700;
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
       cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: var(--font-mono);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      transition: all 0.1s ease;
+      z-index: 50;
     }
 
-    .tap-option:hover {
-      border-color: #ffd700;
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-    }
-
-    .tap-option.selected {
-      background: #ffd700;
-      color: var(--bg-primary);
-      border-color: #ffd700;
+    .quick-tap-btn:active {
+      transform: scale(0.9);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
     }
 
     /* Combo display */
@@ -221,28 +206,35 @@
       }
     }
 
-    /* Quick tap button */
-    .quick-tap-btn {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: linear-gradient(145deg, #3a2a1a, #2a1a0a);
-      border: 3px solid #ffd700;
-      color: #ffd700;
-      font-family: var(--font-heading);
-      font-size: 0.9rem;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-      transition: all 0.1s ease;
-      z-index: 50;
+    /* Stats display */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
     }
 
-    .quick-tap-btn:active {
-      transform: scale(0.9);
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 4px;
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 2.5rem;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     /* Progress to 108 */
@@ -313,14 +305,7 @@
           CYBER WOODFISH // 积德消业 // 赛博修行
         </p>
 
-        <!-- Tap count selector -->
-        <div class="tap-selector">
-          <button class="tap-option selected" data-count="1">+1</button>
-          <button class="tap-option" data-count="10">+10</button>
-          <button class="tap-option" data-count="28">+28</button>
-          <button class="tap-option" data-count="49">+49</button>
-          <button class="tap-option" data-count="108">+108</button>
-        </div>
+        
 
         <!-- Progress to 108 -->
         <div class="progress-container">
@@ -333,11 +318,135 @@
         </div>
 
         <!-- Woodfish -->
-        <div id="woodfish-container" class="woodfish-container">
-          <div class="tap-ring" id="tap-ring"></div>
-          <div class="woodfish-body" id="woodfish-body">
-            <div class="woodfish-text">魚</div>
-          </div>
+        <div class="woodfish-wrapper" id="woodfish-wrapper">
+          <!-- Woodfish Body SVG -->
+          <svg class="woodfish-body" id="woodfish-body" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#D4A574"/>
+                <stop offset="30%" style="stop-color:#C49A6C"/>
+                <stop offset="70%" style="stop-color:#A67C52"/>
+                <stop offset="100%" style="stop-color:#8B6914"/>
+              </linearGradient>
+              <linearGradient id="woodHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#E8C9A0"/>
+                <stop offset="100%" style="stop-color:#C49A6C"/>
+              </linearGradient>
+              <linearGradient id="slitGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#2D1B0E"/>
+                <stop offset="100%" style="stop-color:#1A0F06"/>
+              </linearGradient>
+              <filter id="woodShadow">
+                <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.4"/>
+              </filter>
+              <filter id="innerShadow">
+                <feComponentTransfer in="SourceAlpha">
+                  <feFuncA type="table" tableValues="1 0"/>
+                </feComponentTransfer>
+                <feGaussianBlur stdDeviation="3"/>
+                <feOffset dx="0" dy="2" result="offsetblur"/>
+                <feFlood flood-color="#2D1B0E" flood-opacity="0.5"/>
+                <feComposite in2="offsetblur" operator="in"/>
+                <feMerge>
+                  <feMergeNode/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Main woodfish body - teardrop/bulbous shape -->
+            <path d="M 60 150
+                     Q 50 100 100 70
+                     Q 150 40 220 50
+                     Q 280 60 320 100
+                     Q 360 140 350 180
+                     Q 340 220 280 230
+                     Q 220 240 160 220
+                     Q 100 200 60 150 Z"
+                  fill="url(#woodGrad)"
+                  filter="url(#woodShadow)"/>
+
+            <!-- Highlight on top -->
+            <ellipse cx="180" cy="90" rx="80" ry="30" fill="url(#woodHighlight)" opacity="0.4"/>
+
+            <!-- Wood grain texture -->
+            <g stroke="#8B6914" stroke-width="0.5" opacity="0.2">
+              <path d="M 80 140 Q 120 100 160 90 Q 200 80 250 85 Q 300 90 330 120"/>
+              <path d="M 70 160 Q 110 120 150 110 Q 190 100 240 105 Q 290 110 340 150"/>
+              <path d="M 65 180 Q 100 140 140 130 Q 180 120 230 125 Q 280 130 335 170"/>
+              <path d="M 70 200 Q 105 160 145 150 Q 185 140 235 145 Q 285 150 330 190"/>
+            </g>
+
+            <!-- The horizontal slit (resonance chamber) -->
+            <path d="M 100 145
+                     Q 150 130 200 135
+                     Q 260 140 310 150
+                     Q 340 160 350 175
+                     Q 340 190 310 195
+                     Q 260 200 200 195
+                     Q 150 190 100 180
+                     Q 80 170 80 160
+                     Q 85 145 100 145 Z"
+                  fill="url(#slitGrad)"
+                  filter="url(#innerShadow)"/>
+
+            <!-- Slit highlight (inner reflection) -->
+            <path d="M 110 148 Q 160 135 210 140 Q 270 148 330 158"
+                  fill="none"
+                  stroke="#5D4037"
+                  stroke-width="2"
+                  opacity="0.6"/>
+
+            <!-- Fish tail decorative point on right -->
+            <path d="M 350 180 Q 380 175 395 185 Q 380 195 350 190"
+                  fill="#A67C52"/>
+
+            <!-- Subtle edge highlight -->
+            <path d="M 80 130 Q 120 90 180 70 Q 250 55 310 90"
+                  fill="none"
+                  stroke="#E8C9A0"
+                  stroke-width="1"
+                  opacity="0.3"/>
+          </svg>
+
+          <!-- Ripple effect -->
+          <div class="ripple" id="ripple"></div>
+
+          <!-- Mallet (木鱼棒) -->
+          <svg class="mallet" id="mallet" viewBox="0 0 80 350" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="malletHandle" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#8B6914"/>
+                <stop offset="30%" style="stop-color:#C49A6C"/>
+                <stop offset="50%" style="stop-color:#E8C9A0"/>
+                <stop offset="70%" style="stop-color:#C49A6C"/>
+                <stop offset="100%" style="stop-color:#8B6914"/>
+              </linearGradient>
+              <linearGradient id="malletHead" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#D4A574"/>
+                <stop offset="50%" style="stop-color:#A67C52"/>
+                <stop offset="100%" style="stop-color:#8B6914"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Handle (long and slender) -->
+            <rect x="35" y="100" width="10" height="230" rx="3" fill="url(#malletHandle)"/>
+
+            <!-- Handle wood grain -->
+            <g stroke="#8B6914" stroke-width="0.5" opacity="0.3">
+              <line x1="37" y1="110" x2="37" y2="320"/>
+              <line x1="43" y1="110" x2="43" y2="320"/>
+            </g>
+
+            <!-- Mallet head (egg-shaped, smooth) -->
+            <ellipse cx="40" cy="60" rx="30" ry="50" fill="url(#malletHead)" filter="drop-shadow(0 3px 5px rgba(0,0,0,0.4))"/>
+
+            <!-- Head highlight -->
+            <ellipse cx="35" cy="45" rx="15" ry="25" fill="#E8C9A0" opacity="0.3"/>
+
+            <!-- Neck connection -->
+            <path d="M 32 100 Q 40 95 48 100 L 46 110 Q 40 105 34 110 Z" fill="#A67C52"/>
+          </svg>
         </div>
 
         <!-- Stats -->
@@ -402,7 +511,7 @@
   </footer>
 
   <script>
-    let selectedCount = 1;
+    
     let sessionTaps = 0;
     let sessionMerit = 0;
     let currentProgress = 0;
@@ -430,36 +539,40 @@
       window.location.href = '/';
     }
 
-    // Tap count selector
-    document.querySelectorAll('.tap-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tap-option').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedCount = parseInt(btn.dataset.count);
-      });
-    });
+    
 
-    // Woodfish click handler
+// Woodfish click handler
     document.getElementById('woodfish-body').addEventListener('click', () => doTap());
     document.getElementById('quick-tap').addEventListener('click', () => doTap());
 
     async function doTap() {
+      const wrapper = document.getElementById('woodfish-wrapper');
       const body = document.getElementById('woodfish-body');
-      const ring = document.getElementById('tap-ring');
+      const mallet = document.getElementById('mallet');
+      const ripple = document.getElementById('ripple');
 
-      // Visual feedback
-      body.classList.add('tapping');
-      ring.classList.remove('active');
-      void ring.offsetWidth; // Trigger reflow
-      ring.classList.add('active');
+      // Make mallet visible and trigger strike animation
+      mallet.classList.add('visible');
+      mallet.classList.remove('striking');
+      void mallet.offsetWidth; // Trigger reflow
+      mallet.classList.add('striking');
 
-      setTimeout(() => body.classList.remove('tapping'), 100);
+      // Woodfish shake animation
+      body.classList.remove('shake', 'hit');
+      void body.offsetWidth;
+      body.classList.add('shake', 'hit');
+      setTimeout(() => body.classList.remove('hit'), 200);
+
+      // Ripple effect
+      ripple.classList.remove('active');
+      void ripple.offsetWidth;
+      ripple.classList.add('active');
 
       try {
         const res = await fetch('/api/woodfish', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ count: selectedCount })
+          body: JSON.stringify({ count: 1 })
         });
 
         const data = await res.json();
@@ -468,7 +581,7 @@
           // Update stats
           document.getElementById('total-count').textContent = data.data.total_count;
           document.getElementById('total-merit').textContent = data.data.total_merit;
-          sessionTaps += selectedCount;
+          sessionTaps += 1;
           sessionMerit += data.data.merit;
           document.getElementById('session-taps').textContent = sessionTaps;
 
@@ -477,9 +590,9 @@
           document.getElementById('current-progress').textContent = currentProgress;
           document.getElementById('progress-fill').style.width = (currentProgress / 108 * 100) + '%';
 
-          // Show combo for big taps
-          if (selectedCount >= 28) {
-            showCombo(selectedCount, data.data.merit);
+          // Show combo for milestone taps
+          if (sessionTaps === 108 || sessionTaps === 1000 || sessionTaps === 10000) {
+            showCombo(sessionTaps, data.data.merit);
           }
 
           // Show merit float
@@ -522,13 +635,13 @@
     }
 
     function showMeritFloat(merit) {
-      const container = document.getElementById('woodfish-container');
+      const wrapper = document.getElementById('woodfish-wrapper');
       const float = document.createElement('div');
       float.className = 'merit-float';
       float.textContent = `+${merit}`;
       float.style.left = (Math.random() * 100 + 50) + 'px';
       float.style.top = '50%';
-      container.appendChild(float);
+      wrapper.appendChild(float);
       setTimeout(() => float.remove(), 1000);
     }
 
