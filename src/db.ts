@@ -2,12 +2,12 @@ import { D1Database } from '@cloudflare/workers-types';
 import type { User, IncenseLog, WoodFishLog } from './types';
 
 export async function initDB(db: D1Database): Promise<void> {
-  // Handle migration: add burned_at column if it doesn't exist
+  // Handle migration: add duration_minutes column if it doesn't exist
   try {
     const columnsResult = await db.prepare("PRAGMA table_info(incense_logs)").all();
     const columns = columnsResult.results.map((r: any) => r.name);
-    if (!columns.includes('burned_at')) {
-      await db.exec('ALTER TABLE incense_logs ADD COLUMN burned_at INTEGER NOT NULL DEFAULT 0');
+    if (!columns.includes('duration_minutes')) {
+      await db.exec('ALTER TABLE incense_logs ADD COLUMN duration_minutes INTEGER NOT NULL DEFAULT 15');
     }
   } catch (e) {
     // Table doesn't exist yet, will be created below
@@ -15,7 +15,7 @@ export async function initDB(db: D1Database): Promise<void> {
 
   // Create tables
   await db.exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL)');
-  await db.exec('CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL, burned_at INTEGER NOT NULL DEFAULT 0)');
+  await db.exec('CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL, burned_at INTEGER NOT NULL DEFAULT 0, duration_minutes INTEGER NOT NULL DEFAULT 15)');
   await db.exec('CREATE TABLE IF NOT EXISTS wood_fish_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), count INTEGER NOT NULL DEFAULT 1, merit INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL)');
 
   // Create indexes (ignore errors if already exist)
@@ -88,19 +88,20 @@ export async function createIncenseLog(
   id: string,
   userId: string,
   type: 'career' | 'love' | 'health' | 'study',
-  wish: string
+  wish: string,
+  durationMinutes: number = 15
 ): Promise<IncenseLog | null> {
   const createdAt = Date.now();
-  const burnedAt = createdAt + 15 * 60 * 1000; // 15 minutes later
+  const burnedAt = createdAt + durationMinutes * 60 * 1000;
   const result = await db
     .prepare(
-      'INSERT INTO incense_logs (id, user_id, type, wish, created_at, burned_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO incense_logs (id, user_id, type, wish, created_at, burned_at, duration_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
-    .bind(id, userId, type, wish, createdAt, burnedAt)
+    .bind(id, userId, type, wish, createdAt, burnedAt, durationMinutes)
     .run();
 
   if (result.success) {
-    return { id, user_id: userId, type, wish, created_at: createdAt, burned_at: burnedAt };
+    return { id, user_id: userId, type, wish, created_at: createdAt, burned_at: burnedAt, duration_minutes: durationMinutes };
   }
   return null;
 }

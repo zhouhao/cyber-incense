@@ -17,10 +17,12 @@ export interface IncenseLog {
   type: 'career' | 'love' | 'health' | 'study';
   wish: string;
   created_at: number;
-  burned_at: number;  // When the incense finishes burning (0 = still burning)
+  burned_at: number;
+  duration_minutes: number;
 }
 
-export const INCENSE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+export const INCENSE_DURATIONS = [15, 30, 60] as const;
+export type IncenseDuration = typeof INCENSE_DURATIONS[number];
 
 export interface WoodFishLog {
   id: string;

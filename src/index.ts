@@ -112,9 +112,9 @@ app.post('/api/incense', async (c) => {
     return c.json({ error: 'Please login first' }, 401);
   }
 
-  const { type, wish } = await c.req.json();
+  const { type, wish, duration } = await c.req.json();
 
-  const result = await burnIncense(c.env, user.id, type, wish);
+  const result = await burnIncense(c.env, user.id, type, wish, duration || 15);
 
   if (!result.success) {
     return c.json({ error: result.error }, 400);

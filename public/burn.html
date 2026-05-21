@@ -406,6 +406,48 @@
       display: block;
     }
 
+    /* Duration selector */
+    .duration-selector {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .duration-btn {
+      background: var(--bg-secondary);
+      border: 2px solid var(--text-muted);
+      color: var(--text-muted);
+      padding: 0.8rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      border-radius: 4px;
+    }
+
+    .duration-btn:hover {
+      border-color: var(--color-gold);
+      color: var(--color-gold);
+    }
+
+    .duration-btn.selected {
+      background: rgba(255, 215, 0, 0.2);
+      border-color: var(--color-gold);
+      color: var(--color-gold);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+
+    .duration-btn .merit-preview {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .duration-btn.selected .merit-preview {
+      color: var(--color-gold);
+    }
+
     /* Ashes after burn */
     .ashes-display {
       text-align: center;
@@ -465,7 +507,8 @@
           </div>
 
           <!-- Timer -->
-          <div class="timer-display" id="timer">15:00</div>
+          <div class="timer-display" id="timer">--:--</div>
+          <div id="duration-label" style="color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.5rem;"></div>
 
           <!-- Progress -->
           <div class="progress-container">
@@ -492,11 +535,29 @@
             点燃香火
           </h1>
           <p style="color: var(--text-muted); margin-bottom: 2rem;">
-            一炷香 = 15分钟<br>
-            在香火燃尽前，你可以随时回来查看
+            选择时长和香型，然后点燃<br>
+            时长越长，功德越多（功德 = 时长 × 2）
           </p>
 
           <form id="incense-form" class="burn-form">
+            <div class="form-group">
+              <label class="form-label">选择时长</label>
+              <div class="duration-selector">
+                <button type="button" class="duration-btn selected" data-duration="15">
+                  <div>15 分钟</div>
+                  <div class="merit-preview">功德 +30</div>
+                </button>
+                <button type="button" class="duration-btn" data-duration="30">
+                  <div>30 分钟</div>
+                  <div class="merit-preview">功德 +60</div>
+                </button>
+                <button type="button" class="duration-btn" data-duration="60">
+                  <div>60 分钟</div>
+                  <div class="merit-preview">功德 +120</div>
+                </button>
+              </div>
+            </div>
+
             <div class="form-group">
               <label class="form-label">选择香型</label>
               <div class="type-grid">
@@ -569,192 +630,22 @@
   </footer>
 
   <script>
-    const TOTAL_DURATION = 15 * 60 * 1000; // 15 minutes in ms
     const INCENSE_HEIGHT = 350; // px
     let activeIncense = null;
     let animationInterval = null;
     let smokeInterval = null;
     let ashInterval = null;
     let selectedType = null;
+    let selectedDuration = 15;
 
-    // Check auth
-    async function checkAuth() {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        const data = await res.json();
-        document.getElementById('nav-user').innerHTML = `
-          <a href="/me" class="nav-link"><span class="username">${escapeHtml(data.user.username)}</span></a>
-          <button class="btn" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">登出</button>
-        `;
-        document.getElementById('main-interface').style.display = 'block';
-        loadMyData();
-        loadLeaderboard();
-      } else {
-        document.getElementById('login-required').style.display = 'block';
-      }
-    }
-
-    async function logout() {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/';
-    }
-
-    // Load my data
-    async function loadMyData() {
-      const res = await fetch('/api/incense/my');
-      const data = await res.json();
-
-      if (data.active_incense) {
-        showActiveIncense(data.active_incense);
-      } else {
-        showBurnForm();
-      }
-    }
-
-    // Show active incense view
-    function showActiveIncense(incense) {
-      activeIncense = incense;
-
-      document.getElementById('active-incense-view').style.display = 'block';
-      document.getElementById('burn-form-view').style.display = 'none';
-      document.getElementById('burned-view').style.display = 'none';
-
-      // Set wish
-      const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
-      document.getElementById('active-wish').textContent = incense.wish;
-      document.getElementById('active-type-icon').textContent = typeIcons[incense.type] || '🔥';
-
-      // Start animation
-      startIncenseAnimation();
-    }
-
-    // Show burn form
-    function showBurnForm() {
-      document.getElementById('active-incense-view').style.display = 'none';
-      document.getElementById('burn-form-view').style.display = 'block';
-      document.getElementById('burned-view').style.display = 'none';
-    }
-
-    // Start incense animation
-    function startIncenseAnimation() {
-      const stick = document.getElementById('incense-stick');
-      const flame = document.getElementById('flame');
-      const smoke = document.getElementById('smoke');
-      const ashContainer = document.getElementById('ash-container');
-      const timer = document.getElementById('timer');
-      const progress = document.getElementById('progress');
-
-      flame.classList.add('active');
-      stick.classList.add('burning');
-
-      // Set initial positions at top of full-height incense
-      flame.style.bottom = (30 + INCENSE_HEIGHT) + 'px';
-      smoke.style.bottom = (30 + INCENSE_HEIGHT + 10) + 'px';
-      ashContainer.style.bottom = '0px';
-
-      function update() {
-        if (!activeIncense) return;
-
-        const now = Date.now();
-        const remaining = Math.max(0, activeIncense.burned_at - now);
-        const remainingSeconds = Math.ceil(remaining / 1000);
-        const progressPercent = (remaining / TOTAL_DURATION) * 100;
-
-        // Update height (incense gets shorter)
-        const remainingRatio = remaining / TOTAL_DURATION;
-        const height = Math.max(0, INCENSE_HEIGHT * remainingRatio);
-        stick.style.height = height + 'px';
-
-        // Update flame and smoke position to follow incense top (moves down as incense burns)
-        // bottom = 30px (base plate) + height of remaining incense
-        const bottomPos = 30 + height;
-        flame.style.bottom = bottomPos + 'px';
-        smoke.style.bottom = (bottomPos + 10) + 'px';
-        ashContainer.style.bottom = (bottomPos - 20) + 'px';
-
-        // Update timer
-        const mins = Math.floor(remainingSeconds / 60);
-        const secs = remainingSeconds % 60;
-        timer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-        // Update progress
-        progress.style.width = progressPercent + '%';
-
-        // Warning state
-        if (remaining < 60000) {
-          timer.classList.add('warning');
-        }
-
-        // Check if done
-        if (remaining <= 0) {
-          stopAnimations();
-          showBurnedState();
-          return;
-        }
-
-        animationInterval = setTimeout(update, 1000);
-      }
-
-      update();
-    }
-
-    // Smoke animation
-    function startSmokeAnimation() {
-      const container = document.getElementById('smoke');
-
-      smokeInterval = setInterval(() => {
-        if (!activeIncense) {
-          clearInterval(smokeInterval);
-          return;
-        }
-
-        const smoke = document.createElement('div');
-        smoke.className = 'smoke';
-        smoke.style.setProperty('--drift', (Math.random() * 20 - 10) + 'px');
-        smoke.style.left = (25 + Math.random() * 10) + 'px';
-        container.appendChild(smoke);
-
-        setTimeout(() => smoke.remove(), 3000);
-      }, 500);
-    }
-
-    // Ash animation
-    function startAshAnimation() {
-      const container = document.getElementById('ash-container');
-
-      ashInterval = setInterval(() => {
-        if (!activeIncense) {
-          clearInterval(ashInterval);
-          return;
-        }
-
-        const ash = document.createElement('div');
-        ash.className = 'ash-particle';
-        ash.style.setProperty('--drift', (Math.random() * 30 - 15) + 'px');
-        ash.style.left = (8 + Math.random() * 4) + 'px';
-        ash.style.animationDuration = (1.5 + Math.random()) + 's';
-        container.appendChild(ash);
-
-        setTimeout(() => ash.remove(), 2500);
-      }, 800);
-    }
-
-    // Stop all animations
-    function stopAnimations() {
-      if (animationInterval) clearTimeout(animationInterval);
-      if (smokeInterval) clearInterval(smokeInterval);
-      if (ashInterval) clearInterval(ashInterval);
-
-      document.getElementById('flame').classList.remove('active');
-      document.getElementById('incense-stick').classList.remove('burning');
-    }
-
-    // Show burned state
-    function showBurnedState() {
-      document.getElementById('active-incense-view').style.display = 'none';
-      document.getElementById('burn-form-view').style.display = 'none';
-      document.getElementById('burned-view').style.display = 'block';
-    }
+    // Duration selector
+    document.querySelectorAll('.duration-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedDuration = parseInt(btn.dataset.duration);
+      });
+    });
 
     // Type selection
     document.querySelectorAll('.type-btn').forEach(btn => {
@@ -792,7 +683,7 @@
         const res = await fetch('/api/incense', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: selectedType, wish })
+          body: JSON.stringify({ type: selectedType, wish, duration: selectedDuration })
         });
 
         const data = await res.json();
@@ -811,6 +702,159 @@
         btn.textContent = '点燃香火';
       }
     });
+
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Show active incense view
+    function showActiveIncense(incense) {
+      activeIncense = incense;
+
+      document.getElementById('active-incense-view').style.display = 'block';
+      document.getElementById('burn-form-view').style.display = 'none';
+      document.getElementById('burned-view').style.display = 'none';
+
+      // Set wish
+      const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
+      document.getElementById('active-wish').textContent = incense.wish;
+      document.getElementById('active-type-icon').textContent = typeIcons[incense.type] || '🔥';
+      document.getElementById('duration-label').textContent = `${incense.duration_minutes} 分钟 | 功德 +${incense.merit || incense.duration_minutes * 2}`;
+
+      // Start animation
+      startIncenseAnimation();
+    }
+
+    // Show burn form
+    function showBurnForm() {
+      document.getElementById('active-incense-view').style.display = 'none';
+      document.getElementById('burn-form-view').style.display = 'block';
+      document.getElementById('burned-view').style.display = 'none';
+    }
+
+    // Start incense animation
+    function startIncenseAnimation() {
+      const stick = document.getElementById('incense-stick');
+      const flame = document.getElementById('flame');
+      const smoke = document.getElementById('smoke');
+      const ashContainer = document.getElementById('ash-container');
+      const timer = document.getElementById('timer');
+      const progress = document.getElementById('progress');
+
+      flame.classList.add('active');
+      stick.classList.add('burning');
+
+      // Set initial positions at top of full-height incense
+      flame.style.bottom = (30 + INCENSE_HEIGHT) + 'px';
+      smoke.style.bottom = (30 + INCENSE_HEIGHT + 10) + 'px';
+      ashContainer.style.bottom = '0px';
+
+      function update() {
+        if (!activeIncense) return;
+
+        const now = Date.now();
+        const remaining = Math.max(0, activeIncense.burned_at - now);
+        const remainingSeconds = Math.ceil(remaining / 1000);
+        const progressPercent = (remaining / (activeIncense.duration_minutes * 60 * 1000)) * 100;
+
+        // Update height (incense gets shorter)
+        const totalDuration = activeIncense.duration_minutes * 60 * 1000;
+        const remainingRatio = remaining / totalDuration;
+        const height = Math.max(0, INCENSE_HEIGHT * remainingRatio);
+        stick.style.height = height + 'px';
+
+        // Update flame and smoke position
+        const bottomPos = 30 + height;
+        flame.style.bottom = bottomPos + 'px';
+        smoke.style.bottom = (bottomPos + 10) + 'px';
+        ashContainer.style.bottom = (bottomPos - 20) + 'px';
+
+        // Update timer
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        timer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+        // Update progress
+        progress.style.width = progressPercent + '%';
+
+        // Warning state
+        if (remaining < 60000) {
+          timer.classList.add('warning');
+        }
+
+        // Check if done
+        if (remaining <= 0) {
+          stopAnimations();
+          showBurnedState();
+          return;
+        }
+
+        animationInterval = setTimeout(update, 1000);
+      }
+
+      update();
+    }
+
+    // Stop all animations
+    function stopAnimations() {
+      if (animationInterval) clearTimeout(animationInterval);
+      if (smokeInterval) clearInterval(smokeInterval);
+      if (ashInterval) clearInterval(ashInterval);
+
+      document.getElementById('flame').classList.remove('active');
+      document.getElementById('incense-stick').classList.remove('burning');
+    }
+
+    // Show burned state
+    function showBurnedState() {
+      document.getElementById('active-incense-view').style.display = 'none';
+      document.getElementById('burn-form-view').style.display = 'none';
+      document.getElementById('burned-view').style.display = 'block';
+    }
+
+    // Check auth
+    async function checkAuth() {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('nav-user').innerHTML = `
+          <a href="/me" class="nav-link"><span class="username">${escapeHtml(data.user.username)}</span></a>
+          <button class="btn" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">登出</button>
+        `;
+        document.getElementById('main-interface').style.display = 'block';
+        loadMyData();
+        loadLeaderboard();
+      } else {
+        document.getElementById('login-required').style.display = 'block';
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    // Load my data
+    async function loadMyData() {
+      const res = await fetch('/api/incense/my');
+      const data = await res.json();
+
+      if (data.active_incense) {
+        showActiveIncense(data.active_incense);
+      } else {
+        showBurnForm();
+      }
+    }
 
     // Load leaderboard
     async function loadLeaderboard() {
@@ -841,12 +885,6 @@
       toast.textContent = msg;
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
 
     checkAuth();
