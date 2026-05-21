@@ -2,15 +2,24 @@ import { D1Database } from '@cloudflare/workers-types';
 import type { User, IncenseLog, WoodFishLog } from './types';
 
 export async function initDB(db: D1Database): Promise<void> {
-  // Handle migration: add total_merit column to users if it doesn't exist
+  // Handle migrations for existing tables
   try {
-    const columnsResult = await db.prepare("PRAGMA table_info(users)").all();
-    const columns = columnsResult.results.map((r: any) => r.name);
-    if (!columns.includes('total_merit')) {
+    // Migration: add total_merit column to users if it doesn't exist
+    const usersColumns = (await db.prepare("PRAGMA table_info(users)").all()).results.map((r: any) => r.name);
+    if (!usersColumns.includes('total_merit')) {
       await db.exec('ALTER TABLE users ADD COLUMN total_merit INTEGER NOT NULL DEFAULT 0');
     }
+
+    // Migration: add burned_at and duration_minutes to incense_logs if they don't exist
+    const incenseColumns = (await db.prepare("PRAGMA table_info(incense_logs)").all()).results.map((r: any) => r.name);
+    if (!incenseColumns.includes('burned_at')) {
+      await db.exec('ALTER TABLE incense_logs ADD COLUMN burned_at INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!incenseColumns.includes('duration_minutes')) {
+      await db.exec('ALTER TABLE incense_logs ADD COLUMN duration_minutes INTEGER NOT NULL DEFAULT 15');
+    }
   } catch (e) {
-    // Table doesn't exist yet, will be created below
+    // Tables don't exist yet, will be created below
   }
 
   // Create tables
