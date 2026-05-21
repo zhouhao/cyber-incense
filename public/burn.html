@@ -353,14 +353,14 @@
     .type-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem;
+      gap: 1rem;
       margin-bottom: 1.5rem;
     }
 
     .type-btn {
       background: var(--bg-secondary);
-      border: 2px solid;
-      padding: 1rem 0.5rem;
+      border: 3px solid;
+      padding: 1.5rem 1rem;
       cursor: pointer;
       transition: all 0.3s;
       text-align: center;
@@ -375,25 +375,35 @@
     }
 
     .type-btn[data-type="career"] { border-color: var(--color-primary); }
-    .type-btn[data-type="career"].selected { background: rgba(255, 45, 106, 0.2); }
-    .type-btn[data-type="career"] .type-icon { color: var(--color-primary); }
+    .type-btn[data-type="career"].selected { background: rgba(255, 45, 106, 0.3); }
+    .type-btn[data-type="career"] .type-icon,
+    .type-btn[data-type="career"] .type-name { color: var(--color-primary); }
 
     .type-btn[data-type="love"] { border-color: var(--color-secondary); }
-    .type-btn[data-type="love"].selected { background: rgba(0, 240, 255, 0.2); }
-    .type-btn[data-type="love"] .type-icon { color: var(--color-secondary); }
+    .type-btn[data-type="love"].selected { background: rgba(0, 240, 255, 0.3); }
+    .type-btn[data-type="love"] .type-icon,
+    .type-btn[data-type="love"] .type-name { color: var(--color-secondary); }
 
     .type-btn[data-type="health"] { border-color: var(--color-gold); }
-    .type-btn[data-type="health"].selected { background: rgba(255, 215, 0, 0.2); }
-    .type-btn[data-type="health"] .type-icon { color: var(--color-gold); }
+    .type-btn[data-type="health"].selected { background: rgba(255, 215, 0, 0.3); }
+    .type-btn[data-type="health"] .type-icon,
+    .type-btn[data-type="health"] .type-name { color: var(--color-gold); }
 
     .type-btn[data-type="study"] { border-color: #9b59b6; }
-    .type-btn[data-type="study"].selected { background: rgba(155, 89, 182, 0.2); }
-    .type-btn[data-type="study"] .type-icon { color: #9b59b6; }
+    .type-btn[data-type="study"].selected { background: rgba(155, 89, 182, 0.3); }
+    .type-btn[data-type="study"] .type-icon,
+    .type-btn[data-type="study"] .type-name { color: #9b59b6; }
+
+    .type-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
 
     .type-name {
       font-family: var(--font-heading);
-      font-size: 0.7rem;
-      margin-top: 0.3rem;
+      font-size: 1rem;
+      display: block;
     }
 
     /* Ashes after burn */
@@ -491,20 +501,20 @@
               <label class="form-label">选择香型</label>
               <div class="type-grid">
                 <button type="button" class="type-btn" data-type="career">
-                  <div class="type-icon">💼</div>
-                  <div class="type-name">事业</div>
+                  <span class="type-icon">💼</span>
+                  <span class="type-name">事业</span>
                 </button>
                 <button type="button" class="type-btn" data-type="love">
-                  <div class="type-icon">💕</div>
-                  <div class="type-name">爱情</div>
+                  <span class="type-icon">💕</span>
+                  <span class="type-name">爱情</span>
                 </button>
                 <button type="button" class="type-btn" data-type="health">
-                  <div class="type-icon">💪</div>
-                  <div class="type-name">健康</div>
+                  <span class="type-icon">💪</span>
+                  <span class="type-name">健康</span>
                 </button>
                 <button type="button" class="type-btn" data-type="study">
-                  <div class="type-icon">📚</div>
-                  <div class="type-name">学业</div>
+                  <span class="type-icon">📚</span>
+                  <span class="type-name">学业</span>
                 </button>
               </div>
             </div>
