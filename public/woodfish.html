@@ -10,7 +10,7 @@
     .woodfish-wrapper {
       position: relative;
       width: 400px;
-      height: 300px;
+      height: 200px;
       margin: 2rem auto;
     }
 
@@ -60,12 +60,12 @@
     /* Mallet (木鱼棒) */
     .mallet {
       position: absolute;
-      top: -20px;
-      right: 20px;
-      width: 80px;
-      height: 280px;
+      top: -30px;
+      right: 80px;
+      width: 60px;
+      height: 250px;
       opacity: 0;
-      transform: rotate(-45deg) scale(0.8);
+      transform: rotate(-30deg) scale(0.8);
       transform-origin: bottom center;
       transition: opacity 0.3s ease, transform 0.3s ease;
       pointer-events: none;
@@ -75,7 +75,7 @@
     .woodfish-wrapper:hover .mallet,
     .mallet.visible {
       opacity: 1;
-      transform: rotate(-20deg) scale(1);
+      transform: rotate(-15deg) scale(1);
     }
 
     /* Mallet strike animation */
@@ -93,11 +93,11 @@
     /* Ripple effect on woodfish */
     .ripple {
       position: absolute;
-      top: 45%;
-      left: 50%;
+      top: 55%;
+      left: 60%;
       transform: translate(-50%, -50%);
-      width: 80px;
-      height: 40px;
+      width: 150px;
+      height: 60px;
       border: 2px solid rgba(255, 215, 0, 0.6);
       border-radius: 50%;
       opacity: 0;
@@ -110,13 +110,13 @@
 
     @keyframes rippleEffect {
       0% {
-        width: 80px;
-        height: 40px;
+        width: 150px;
+        height: 60px;
         opacity: 0.8;
       }
       100% {
-        width: 300px;
-        height: 150px;
+        width: 350px;
+        height: 140px;
         opacity: 0;
       }
     }
@@ -320,12 +320,12 @@
         <!-- Woodfish -->
         <div class="woodfish-wrapper" id="woodfish-wrapper">
           <!-- Woodfish Body SVG -->
-          <svg class="woodfish-body" id="woodfish-body" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+          <svg class="woodfish-body" id="woodfish-body" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style="stop-color:#D4A574"/>
-                <stop offset="30%" style="stop-color:#C49A6C"/>
-                <stop offset="70%" style="stop-color:#A67C52"/>
+                <stop offset="20%" style="stop-color:#C49A6C"/>
+                <stop offset="60%" style="stop-color:#A67C52"/>
                 <stop offset="100%" style="stop-color:#8B6914"/>
               </linearGradient>
               <linearGradient id="woodHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -337,76 +337,58 @@
                 <stop offset="100%" style="stop-color:#1A0F06"/>
               </linearGradient>
               <filter id="woodShadow">
-                <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.4"/>
-              </filter>
-              <filter id="innerShadow">
-                <feComponentTransfer in="SourceAlpha">
-                  <feFuncA type="table" tableValues="1 0"/>
-                </feComponentTransfer>
-                <feGaussianBlur stdDeviation="3"/>
-                <feOffset dx="0" dy="2" result="offsetblur"/>
-                <feFlood flood-color="#2D1B0E" flood-opacity="0.5"/>
-                <feComposite in2="offsetblur" operator="in"/>
-                <feMerge>
-                  <feMergeNode/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
+                <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
               </filter>
             </defs>
 
-            <!-- Main woodfish body - teardrop/bulbous shape -->
-            <path d="M 60 150
-                     Q 50 100 100 70
-                     Q 150 40 220 50
-                     Q 280 60 320 100
-                     Q 360 140 350 180
-                     Q 340 220 280 230
-                     Q 220 240 160 220
-                     Q 100 200 60 150 Z"
+            <!-- Main woodfish body - horizontal bulbous shape -->
+            <path d="M 40 140
+                     Q 30 100 80 80
+                     Q 150 50 250 60
+                     Q 350 70 380 120
+                     Q 390 160 360 180
+                     Q 300 210 200 200
+                     Q 100 190 60 160
+                     Q 45 150 40 140 Z"
                   fill="url(#woodGrad)"
                   filter="url(#woodShadow)"/>
 
-            <!-- Highlight on top -->
-            <ellipse cx="180" cy="90" rx="80" ry="30" fill="url(#woodHighlight)" opacity="0.4"/>
+            <!-- Top highlight -->
+            <ellipse cx="200" cy="85" rx="100" ry="25" fill="url(#woodHighlight)" opacity="0.3"/>
 
             <!-- Wood grain texture -->
-            <g stroke="#8B6914" stroke-width="0.5" opacity="0.2">
-              <path d="M 80 140 Q 120 100 160 90 Q 200 80 250 85 Q 300 90 330 120"/>
-              <path d="M 70 160 Q 110 120 150 110 Q 190 100 240 105 Q 290 110 340 150"/>
-              <path d="M 65 180 Q 100 140 140 130 Q 180 120 230 125 Q 280 130 335 170"/>
-              <path d="M 70 200 Q 105 160 145 150 Q 185 140 235 145 Q 285 150 330 190"/>
+            <g stroke="#8B6914" stroke-width="0.5" opacity="0.15">
+              <path d="M 60 130 Q 150 100 250 110 Q 340 120 370 150"/>
+              <path d="M 55 145 Q 140 115 240 125 Q 335 135 365 165"/>
+              <path d="M 50 160 Q 130 130 230 140 Q 325 150 355 180"/>
             </g>
 
-            <!-- The horizontal slit (resonance chamber) -->
-            <path d="M 100 145
-                     Q 150 130 200 135
-                     Q 260 140 310 150
-                     Q 340 160 350 175
-                     Q 340 190 310 195
-                     Q 260 200 200 195
-                     Q 150 190 100 180
-                     Q 80 170 80 160
-                     Q 85 145 100 145 Z"
-                  fill="url(#slitGrad)"
-                  filter="url(#innerShadow)"/>
+            <!-- The slit (resonance chamber) - enters from right -->
+            <path d="M 380 120
+                     Q 360 115 320 120
+                     Q 250 130 180 135
+                     Q 120 138 80 130
+                     Q 55 125 50 140
+                     Q 55 155 80 160
+                     Q 120 168 180 165
+                     Q 250 160 320 150
+                     Q 360 145 380 150
+                     Q 385 135 380 120 Z"
+                  fill="url(#slitGrad)"/>
 
-            <!-- Slit highlight (inner reflection) -->
-            <path d="M 110 148 Q 160 135 210 140 Q 270 148 330 158"
+            <!-- Slit inner highlight -->
+            <path d="M 360 125 Q 310 120 250 128 Q 180 135 120 132"
                   fill="none"
                   stroke="#5D4037"
                   stroke-width="2"
-                  opacity="0.6"/>
+                  opacity="0.5"/>
 
-            <!-- Fish tail decorative point on right -->
-            <path d="M 350 180 Q 380 175 395 185 Q 380 195 350 190"
-                  fill="#A67C52"/>
-
-            <!-- Subtle edge highlight -->
-            <path d="M 80 130 Q 120 90 180 70 Q 250 55 310 90"
+            <!-- Subtle edge highlight on top -->
+            <path d="M 60 95 Q 150 70 250 75 Q 340 80 370 105"
                   fill="none"
                   stroke="#E8C9A0"
-                  stroke-width="1"
-                  opacity="0.3"/>
+                  stroke-width="1.5"
+                  opacity="0.4"/>
           </svg>
 
           <!-- Ripple effect -->
