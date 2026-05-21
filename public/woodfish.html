@@ -432,14 +432,10 @@
         </div>
 
         <!-- Stats -->
-        <div class="stats-grid">
+        <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
           <div class="stat-card">
             <div id="total-count" class="stat-value">0</div>
             <div class="stat-label">累计敲击</div>
-          </div>
-          <div class="stat-card">
-            <div id="total-merit" class="stat-value">0</div>
-            <div class="stat-label">累积功德</div>
           </div>
           <div class="stat-card">
             <div id="session-taps" class="stat-value">0</div>
@@ -562,7 +558,6 @@
         if (res.ok) {
           // Update stats
           document.getElementById('total-count').textContent = data.data.total_count;
-          document.getElementById('total-merit').textContent = data.data.total_merit;
           sessionTaps += 1;
           sessionMerit += data.data.merit;
           document.getElementById('session-taps').textContent = sessionTaps;
@@ -633,7 +628,6 @@
         const data = await res.json();
 
         document.getElementById('total-count').textContent = data.total_count || 0;
-        document.getElementById('total-merit').textContent = data.total_merit || 0;
 
         currentProgress = (data.total_count || 0) % 108;
         document.getElementById('current-progress').textContent = currentProgress;
