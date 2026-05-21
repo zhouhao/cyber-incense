@@ -152,8 +152,26 @@
           fetch('/api/woodfish/my')
         ]);
 
+        // Check for HTTP errors
+        if (!incenseRes.ok) {
+          const errData = await incenseRes.json().catch(() => ({}));
+          throw new Error('Failed to load incense data: ' + (errData.error || incenseRes.status));
+        }
+        if (!woodfishRes.ok) {
+          const errData = await woodfishRes.json().catch(() => ({}));
+          throw new Error('Failed to load woodfish data: ' + (errData.error || woodfishRes.status));
+        }
+
         const incenseData = await incenseRes.json();
         const woodfishData = await woodfishRes.json();
+
+        // Check for API errors
+        if (incenseData.error) {
+          throw new Error('API Error: ' + incenseData.error);
+        }
+        if (woodfishData.error) {
+          throw new Error('API Error: ' + woodfishData.error);
+        }
 
         // Update counts
         document.getElementById('total-count').textContent = incenseData.count || 0;
@@ -163,7 +181,7 @@
         const totalDuration = (incenseData.logs || []).reduce((sum, log) => sum + (log.duration_minutes || 0), 0);
         document.getElementById('total-duration').textContent = totalDuration;
 
-// Show active incense alert if there's one burning
+        // Show active incense alert if there's one burning
         if (incenseData.active_incense) {
           const active = incenseData.active_incense;
           const remainingMins = Math.ceil(active.remaining_ms / 60000);
@@ -206,8 +224,8 @@
           historyEl.innerHTML = '<div style="text-align: center; color: var(--text-muted);">暂无香火记录，去上一柱吧！</div>';
         }
       } catch (e) {
-        console.error(e);
-        document.getElementById('incense-history').innerHTML = '<div style="text-align: center; color: var(--text-muted);">加载失败</div>';
+        console.error('Load error:', e);
+        document.getElementById('incense-history').innerHTML = '<div style="text-align: center; color: var(--text-muted);">加载失败: ' + escapeHtml(e.message || String(e)) + '</div>';
       }
     }
 
