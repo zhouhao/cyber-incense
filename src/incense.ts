@@ -1,5 +1,5 @@
-import type { Env, IncenseDuration } from './types';
-import { createIncenseLog, getUserIncenseLogs, getLeaderboard, getUserIncenseCount, getRecentIncenseLogs, getUserActiveIncense } from './db';
+import type { Env } from './types';
+import { createIncenseLog, getUserIncenseLogs, getLeaderboard, getUserIncenseCount, getRecentIncenseLogs, getUserActiveIncense, getTotalMeritFromLogs, addUserMerit } from './db';
 
 const VALID_TYPES = ['career', 'love', 'health', 'study'];
 const VALID_DURATIONS = [15, 30, 60];
@@ -44,6 +44,9 @@ export async function burnIncense(
   // Get updated count
   const count = await getUserIncenseCount(env.DB, userId);
 
+  // Add merit to user's total
+  const totalMerit = await addUserMerit(env.DB, userId, merit);
+
   // Determine achievements
   const achievements: string[] = [];
   if (count === 1) achievements.push('first_incense');
@@ -60,6 +63,7 @@ export async function burnIncense(
       burned_at: log.burned_at,
       duration_minutes: log.duration_minutes,
       merit,  // 功德 = 时长 * 2
+      total_merit: totalMerit,  // 用户累计功德
       remaining_ms: log.burned_at - Date.now(),
       count,
       achievements,
@@ -72,10 +76,13 @@ export async function getMyIncense(env: Env, userId: string) {
   const count = await getUserIncenseCount(env.DB, userId);
   const activeIncense = await getUserActiveIncense(env.DB, userId);
 
+  // Calculate total merit directly from logs (fresh calculation every time)
+  const totalMerit = await getTotalMeritFromLogs(env.DB, userId);
+
   return {
     logs,
     count,
-    total_merit: logs.reduce((sum, log) => sum + (log.duration_minutes * 2), 0),
+    total_merit: totalMerit,
     active_incense: activeIncense ? {
       id: activeIncense.id,
       type: activeIncense.type,

@@ -2,19 +2,19 @@ import { D1Database } from '@cloudflare/workers-types';
 import type { User, IncenseLog, WoodFishLog } from './types';
 
 export async function initDB(db: D1Database): Promise<void> {
-  // Handle migration: add duration_minutes column if it doesn't exist
+  // Handle migration: add total_merit column to users if it doesn't exist
   try {
-    const columnsResult = await db.prepare("PRAGMA table_info(incense_logs)").all();
+    const columnsResult = await db.prepare("PRAGMA table_info(users)").all();
     const columns = columnsResult.results.map((r: any) => r.name);
-    if (!columns.includes('duration_minutes')) {
-      await db.exec('ALTER TABLE incense_logs ADD COLUMN duration_minutes INTEGER NOT NULL DEFAULT 15');
+    if (!columns.includes('total_merit')) {
+      await db.exec('ALTER TABLE users ADD COLUMN total_merit INTEGER NOT NULL DEFAULT 0');
     }
   } catch (e) {
     // Table doesn't exist yet, will be created below
   }
 
   // Create tables
-  await db.exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL)');
+  await db.exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, created_at INTEGER NOT NULL, total_merit INTEGER NOT NULL DEFAULT 0)');
   await db.exec('CREATE TABLE IF NOT EXISTS incense_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), type TEXT NOT NULL CHECK(type IN (\'career\', \'love\', \'health\', \'study\')), wish TEXT NOT NULL, created_at INTEGER NOT NULL, burned_at INTEGER NOT NULL DEFAULT 0, duration_minutes INTEGER NOT NULL DEFAULT 15)');
   await db.exec('CREATE TABLE IF NOT EXISTS wood_fish_logs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), count INTEGER NOT NULL DEFAULT 1, merit INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL)');
 
@@ -48,7 +48,7 @@ export async function createUser(
     .run();
 
   if (result.success) {
-    return { id, username, email, password: passwordHash, created_at: Date.now() };
+    return { id, username, email, password: passwordHash, total_merit: 0, created_at: Date.now() };
   }
   return null;
 }
@@ -81,6 +81,37 @@ export async function getUserById(db: D1Database, id: string): Promise<User | nu
     .first<User>();
 
   return result || null;
+}
+
+export async function addUserMerit(db: D1Database, userId: string, merit: number): Promise<number> {
+  await db
+    .prepare('UPDATE users SET total_merit = total_merit + ? WHERE id = ?')
+    .bind(merit, userId)
+    .run();
+
+  const result = await db
+    .prepare('SELECT total_merit FROM users WHERE id = ?')
+    .bind(userId)
+    .first<{ total_merit: number }>();
+
+  return result?.total_merit || 0;
+}
+
+// Calculate total merit from incense and woodfish logs
+export async function getTotalMeritFromLogs(db: D1Database, userId: string): Promise<number> {
+  // Sum incense merit (duration_minutes * 2)
+  const incenseResult = await db
+    .prepare('SELECT COALESCE(SUM(duration_minutes * 2), 0) as merit FROM incense_logs WHERE user_id = ?')
+    .bind(userId)
+    .first<{ merit: number }>();
+
+  // Sum woodfish merit
+  const woodfishResult = await db
+    .prepare('SELECT COALESCE(SUM(merit), 0) as merit FROM wood_fish_logs WHERE user_id = ?')
+    .bind(userId)
+    .first<{ merit: number }>();
+
+  return (incenseResult?.merit || 0) + (woodfishResult?.merit || 0);
 }
 
 export async function createIncenseLog(

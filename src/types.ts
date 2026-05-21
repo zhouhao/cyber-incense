@@ -8,6 +8,7 @@ export interface User {
   username: string;
   email: string;
   password: string;
+  total_merit: number;
   created_at: number;
 }
 

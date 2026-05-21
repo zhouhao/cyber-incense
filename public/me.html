@@ -47,14 +47,22 @@
           <h2 id="user-greeting" style="color: var(--color-gold); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1rem;">
             赛博信徒
           </h2>
-          <div style="display: flex; justify-content: center; gap: 3rem; margin: 2rem 0;">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin: 2rem 0;">
             <div>
-              <div id="total-count" style="font-size: 3rem; color: var(--color-primary); font-family: var(--font-mono);">0</div>
-              <div style="color: var(--text-muted); font-size: 0.9rem;">累计上香</div>
+              <div id="total-count" style="font-size: 2.5rem; color: var(--color-primary); font-family: var(--font-mono);">0</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">上香次数</div>
             </div>
             <div>
-              <div id="week-count" style="font-size: 3rem; color: var(--color-secondary); font-family: var(--font-mono);">0</div>
-              <div style="color: var(--text-muted); font-size: 0.9rem;">本周香火</div>
+              <div id="total-duration" style="font-size: 2.5rem; color: var(--color-gold); font-family: var(--font-mono);">0</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">总累计时长(分钟)</div>
+            </div>
+            <div>
+              <div id="total-taps" style="font-size: 2.5rem; color: var(--color-secondary); font-family: var(--font-mono);">0</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">敲木鱼次数</div>
+            </div>
+            <div>
+              <div id="total-merit" style="font-size: 2.5rem; color: #ffd700; font-family: var(--font-mono); text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);">0</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">总功德</div>
             </div>
           </div>
         </div>
@@ -64,18 +72,30 @@
           <h3 style="color: var(--color-secondary); font-family: var(--font-heading); margin-bottom: 1rem;">
             成就系统 // ACHIEVEMENTS
           </h3>
-          <div id="achievements-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+          <div id="achievements-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;">
             <div class="achievement" data-id="first_incense" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
-              <div style="color: var(--text-primary); font-size: 0.85rem;">首次上香</div>
+              <div style="color: var(--text-primary); font-size: 0.8rem;">首次上香</div>
             </div>
             <div class="achievement" data-id="incense_10" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔥</div>
-              <div style="color: var(--text-primary); font-size: 0.85rem;">上香10次</div>
+              <div style="color: var(--text-primary); font-size: 0.8rem;">上香10次</div>
             </div>
             <div class="achievement" data-id="incense_50" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚡</div>
-              <div style="color: var(--text-primary); font-size: 0.85rem;">上香50次</div>
+              <div style="color: var(--text-primary); font-size: 0.8rem;">上香50次</div>
+            </div>
+            <div class="achievement" data-id="first_tap" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🐟</div>
+              <div style="color: var(--text-primary); font-size: 0.8rem;">首次敲木鱼</div>
+            </div>
+            <div class="achievement" data-id="tap_108" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔔</div>
+              <div style="color: var(--text-primary); font-size: 0.8rem;">敲木鱼108</div>
+            </div>
+            <div class="achievement" data-id="tap_1000" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; text-align: center; opacity: 0.4;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">✨</div>
+              <div style="color: var(--text-primary); font-size: 0.8rem;">敲木鱼1000</div>
             </div>
           </div>
         </div>
@@ -127,38 +147,35 @@
 
     async function loadMyData() {
       try {
-        const [meRes, leaderboardRes] = await Promise.all([
+        const [incenseRes, woodfishRes] = await Promise.all([
           fetch('/api/incense/my'),
-          fetch('/api/incense/leaderboard')
+          fetch('/api/woodfish/my')
         ]);
 
-        const meData = await meRes.json();
-        const leaderboardData = await leaderboardRes.json();
+        const incenseData = await incenseRes.json();
+        const woodfishData = await woodfishRes.json();
 
         // Update counts
-        document.getElementById('total-count').textContent = meData.count || 0;
+        document.getElementById('total-count').textContent = incenseData.count || 0;
+        document.getElementById('total-taps').textContent = woodfishData.total_count || 0;
+        document.getElementById('total-merit').textContent = incenseData.total_merit || 0;
+        // Calculate total duration from incense logs
+        const totalDuration = (incenseData.logs || []).reduce((sum, log) => sum + (log.duration_minutes || 0), 0);
+        document.getElementById('total-duration').textContent = totalDuration;
 
-        // Show active incense alert if there's one burning
-        if (meData.active_incense) {
-          const active = meData.active_incense;
+// Show active incense alert if there's one burning
+        if (incenseData.active_incense) {
+          const active = incenseData.active_incense;
           const remainingMins = Math.ceil(active.remaining_ms / 60000);
-          const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
           document.getElementById('active-incense-alert').style.display = 'block';
           document.getElementById('active-incense-info').textContent =
             `${typeIcons[active.type] || '🔥'} ${active.wish.substring(0, 20)}${active.wish.length > 20 ? '...' : ''} · 剩余约 ${remainingMins} 分钟`;
         }
 
-        // Calculate week count
-        const myEntry = leaderboardData.leaderboard?.find(l => {
-          // We don't have username from /me endpoint directly, but we can check localStorage
-          // For simplicity, just show total
-        });
-        document.getElementById('week-count').textContent = myEntry?.count || 0;
-
-        // Update achievements
-        const achievements = meData.achievements || {};
-        Object.keys(achievements).forEach(key => {
-          if (achievements[key]) {
+        // Update achievements (combine incense and woodfish achievements)
+        const allAchievements = { ...incenseData.achievements, ...woodfishData.achievements };
+        Object.keys(allAchievements).forEach(key => {
+          if (allAchievements[key]) {
             const el = document.querySelector(`.achievement[data-id="${key}"]`);
             if (el) {
               el.style.opacity = '1';
@@ -170,8 +187,8 @@
 
         // Load history
         const historyEl = document.getElementById('incense-history');
-        if (meData.logs && meData.logs.length > 0) {
-          historyEl.innerHTML = meData.logs.map(log => {
+        if (incenseData.logs && incenseData.logs.length > 0) {
+          historyEl.innerHTML = incenseData.logs.map(log => {
             const typeIcons = { career: '💼', love: '💕', health: '💪', study: '📚' };
             const typeColors = { career: 'var(--color-primary)', love: 'var(--color-secondary)', health: 'var(--color-gold)', study: '#9b59b6' };
             const time = new Date(log.created_at).toLocaleString('zh-CN');

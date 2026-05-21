@@ -1,5 +1,5 @@
 import type { Env } from './types';
-import { createWoodFishLog, getUserWoodFishLogs, getUserTotalWoodFish, getWoodFishLeaderboard } from './db';
+import { createWoodFishLog, getUserWoodFishLogs, getUserTotalWoodFish, getWoodFishLeaderboard, addUserMerit } from './db';
 
 export async function tapWoodFish(
   env: Env,
@@ -25,6 +25,9 @@ export async function tapWoodFish(
     return { success: false, error: 'Failed to record wood fish tap' };
   }
 
+  // Add merit to user's total
+  const totalUserMerit = await addUserMerit(env.DB, userId, merit);
+
   // Get updated totals
   const totals = await getUserTotalWoodFish(env.DB, userId);
 
@@ -42,7 +45,7 @@ export async function tapWoodFish(
       count: log.count,
       merit: log.merit,
       total_count: totals.count,
-      total_merit: totals.merit,
+      total_merit: totalUserMerit,  // 统一使用 users 表的 total_merit
       achievements,
       round_complete: count >= 108 ? Math.floor(count / 108) : 0,
     },
