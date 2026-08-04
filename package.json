@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "hono": "^4.0.0",
+    "hono": "^4.12.34",
     "jose": "^5.0.0"
   },
   "devDependencies": {
